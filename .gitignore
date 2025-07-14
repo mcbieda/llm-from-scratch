@@ -1,0 +1,48 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+.envrc
+*.env
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+
+# Jupyter Notebook checkpoints (if using notebooks)
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and local config
+*.log
+*.sqlite
+*.db
+
+# Output files
+*.csv
+*.tsv
+*.xlsx
+*.json
+*.xml
+*.parquet
+*.hdf5
+*.feather
+*.pickle
+*.pkl
+
+
+# Output and Input folders
+**/output/
+**/data/
+**/results/
+**/notrack/
+
