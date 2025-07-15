@@ -27,3 +27,8 @@ first_one.shape
 first_one_fulldim.shape
 
 # %%
+# get second tensor element from inputs
+second_one = inputs[1,:,:]
+second_one_fulldim = inputs[1:2]
+
+#
