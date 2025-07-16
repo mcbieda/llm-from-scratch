@@ -174,9 +174,8 @@ class MultiHeadAttention(nn.Module):
 # %% run data
 # run data
 myattention3 = MultiHeadAttention(6,6,4,0.5,2)
+# myattention3.eval()  # this will eliminate dropout
 context_res3 = myattention3(first_one_fulldim)
 print(context_res3)
 print(context_res3.shape)
 
-# %%
-   
