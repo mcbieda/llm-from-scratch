@@ -8,6 +8,9 @@ import torch
 
 # %%
 # make random set of embedding data
+# this makes a batch of data: batchsize # of examples of (sentence_tokens,d_in)
+#  each "example" would be like the embedding of a single sentence
+# See first_one below for a single example taken from this batch
 # note use normal here
 torch.manual_seed(123)
 batchsize=3
@@ -29,6 +32,8 @@ first_one_fulldim = inputs[:1]
 # %%
 # simple attention class
 # listing 3.1 from Raschka
+# note this does not take a batch, but rather just the (T,d_in) tensor of a single example
+# this is really simple - bare-bones -  scaled dot-product attention
 import torch.nn as nn
 class SelfAttention_v1(nn.Module):
     def __init__(self, d_in, d_out):
@@ -62,6 +67,8 @@ print(context_res.shape)
 # %%
 # listing 3.3
 # note takes a batch so 3D tensor needed
+# uses nn.Linear, which is a linear layer
+# a lot of the complexity here is from using the full 3D tensor instead of single examples
 class CausalAttention(nn.Module):
     def __init__(self, d_in, d_out, context_length,
                 dropout, qkv_bias=False):
@@ -71,24 +78,27 @@ class CausalAttention(nn.Module):
         self.W_key   = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.dropout = nn.Dropout(dropout)
+        # Create the mask - but is altered to -Inf in forward method below
         self.register_buffer(
            'mask',
            torch.triu(torch.ones(context_length, context_length),
            diagonal=1)
-        )
+        ) 
 
     def forward(self, x):
-        b, num_tokens, d_in = x.shape
+        b, num_tokens, d_in = x.shape  # Note x is (batch, T, d_in)
         keys = self.W_key(x)
         queries = self.W_query(x)
         values = self.W_value(x)
 
         attn_scores = queries @ keys.transpose(1, 2)   
+        # Fill in the masked values here with -Inf
         attn_scores.masked_fill_(
             self.mask.bool()[:num_tokens, :num_tokens], -torch.inf) 
         attn_weights = torch.softmax(
             attn_scores / keys.shape[-1]**0.5, dim=-1
         )
+        # Note dropout is present unless model.eval() is run
         attn_weights = self.dropout(attn_weights)
 
         context_vec = attn_weights @ values
@@ -101,9 +111,10 @@ myattention2 = CausalAttention(6,6,4,0.5)
 context_res2 = myattention2(first_one_fulldim)
 print(context_res2)
 print(context_res2.shape)
+print(f"Training status for myattention2 is {myattention2.training=}")
 
 # %% multihead
-# multihead attention combined
+# listing 3.5 multihead attention combined
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_in, d_out, 
                  context_length, dropout, num_heads, qkv_bias=False):
@@ -148,6 +159,7 @@ class MultiHeadAttention(nn.Module):
 
         attn_weights = torch.softmax(
             attn_scores / keys.shape[-1]**0.5, dim=-1)
+        # Note dropout is present unless model.eval() is run
         attn_weights = self.dropout(attn_weights)
 
         context_vec = (attn_weights @ values).transpose(1, 2)
