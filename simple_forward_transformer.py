@@ -118,18 +118,28 @@ print(f"Training status for myattention2 is {myattention2.training=}")
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_in, d_out, 
                  context_length, dropout, num_heads, qkv_bias=False):
-        super().__init__()
+        super().__init__() # initialize the inherited class
         assert (d_out % num_heads == 0), \
             "d_out must be divisible by num_heads"
 
         self.d_out = d_out
         self.num_heads = num_heads
+
+        # head dimension is number of features in the embedding space that each head gets
         self.head_dim = d_out // num_heads
+
+        # Linear because want to make this easy to do the weight * input calculations
         self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+
+        # setup out_proj as a Linear layer too
         self.out_proj = nn.Linear(d_out, d_out)
+
+        # Dropout, note default enabled but disabled if model.eval() is used
         self.dropout = nn.Dropout(dropout)
+
+        # Mask prep - but see forward method
         self.register_buffer(
             "mask",
             torch.triu(torch.ones(context_length, context_length),
@@ -137,36 +147,57 @@ class MultiHeadAttention(nn.Module):
         )
 
     def forward(self, x):
-        b, num_tokens, d_in = x.shape
+
+        # for full dimensionality explanation of this method, see:
+        #  https://chatgpt.com/share/687db459-fe78-8003-90f3-3999e18b73ff
+        b, num_tokens, d_in = x.shape # note 3D tensor required
+
+        # Because Linear is setup above, can just pass input
         keys = self.W_key(x)
         queries = self.W_query(x)
         values = self.W_value(x)
 
+        # Split the heads - view allows the split of d_out into:
+        #  self.num_heads and self.head_dim
         keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
         values = values.view(b, num_tokens, self.num_heads, self.head_dim)  
-        queries = queries.view(                                             
-            b, num_tokens, self.num_heads, self.head_dim                    
-        )                                                                   
+        queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)                                                                   
 
+        # Transpose num_tokens and self.num_heads
+        #   this makes sense because we want last two dimensions to be like (T,d_out)
+        #   but note that it is NOT d_out, it is the portion of d_out that each head gets
         keys = keys.transpose(1, 2)
         queries = queries.transpose(1, 2)
         values = values.transpose(1, 2)
 
+        # Classic attention head calculation QK^T
         attn_scores = queries @ keys.transpose(2, 3)
-        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
 
+        # Mask creation step 2 (part1 was in the constructor)
+        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
+        # Fill in the masked values here with -Inf
         attn_scores.masked_fill_(mask_bool, -torch.inf)
 
+        # Scale the attention weights by sqrt(d) and apply softmax
         attn_weights = torch.softmax(
             attn_scores / keys.shape[-1]**0.5, dim=-1)
+        
         # Note dropout is present unless model.eval() is run
         attn_weights = self.dropout(attn_weights)
 
+        # Context vector calculation and transpose so get back to original dimension order
+        #   (b, num_tokens, num_heads, head_dim)
         context_vec = (attn_weights @ values).transpose(1, 2)
 
+        # contiguous - because we need to make a copy here for memory reasons
+        #  overall puts back to (b, num_tokens, d_out)
+        #  so "collapses" the last two dimensions into one
         context_vec = context_vec.contiguous().view(
             b, num_tokens, self.d_out
         )
+
+        # projection layer, can change dimension here - note is Linear layer and
+        #  defined in constructor above
         context_vec = self.out_proj(context_vec)
         return context_vec
     
@@ -174,7 +205,7 @@ class MultiHeadAttention(nn.Module):
 # %% run data
 # run data
 myattention3 = MultiHeadAttention(6,6,4,0.5,2)
-# myattention3.eval()  # this will eliminate dropout
+# myattention3.eval()  # this will eliminate
 context_res3 = myattention3(first_one_fulldim)
 print(context_res3)
 print(context_res3.shape)

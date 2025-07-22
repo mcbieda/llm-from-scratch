@@ -18,6 +18,18 @@ inputs = torch.randn(batchsize,sentence_tokens,d_in)
 print(inputs)
 
 # %%
+# make a tensor
+simple_tensor = torch.tensor([1,2,3,4])
+print(simple_tensor)
+print(f"Shape of simple_tensor is {simple_tensor.shape}")
+simple_2D =simple_tensor.view(2,2)
+print(simple_2D)
+simple_2D_2 = simple_tensor.view(4,1)
+print(simple_2D_2)
+
+
+
+# %%
 # slice tensor
 first_one = inputs[0,:,:]
 first_one_fulldim = inputs[:1]
