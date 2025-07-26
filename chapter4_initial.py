@@ -284,7 +284,7 @@ class FeedForward(nn.Module):
 # %%
 # transformer block
 
-# comment this out because I have MultiHeadAttention declared above
+# comment this next line because I have MultiHeadAttention declared above
 # from chapter03 import MultiHeadAttention
 
 class TransformerBlock(nn.Module):
@@ -323,26 +323,44 @@ class TransformerBlock(nn.Module):
 # listing 4.7
 class GPTModel(nn.Module):
     def __init__(self, cfg):
+
         super().__init__()
+        # embedding, token and position and setup dropout for learning at embedding layer
+        # token and positional embedding are LEARNED parameters
         self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
+        # note positional embedding is vectors of d_in (= emb_dim) during training
+        # NOT prespecified approach, all just learning
         self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
+        # embedding level dropout is important because we are learning the token and pos embedding
         self.drop_emb = nn.Dropout(cfg["drop_rate"])
 
+        # one TransformerBlock per layer
         self.trf_blocks = nn.Sequential(
             *[TransformerBlock(cfg) for _ in range(cfg["n_layers"])])
 
+        # after Transformer, do a final layer norm
         self.final_norm = LayerNorm(cfg["emb_dim"])
+        
+        # final linear layer that has embed dimension to vocab_size transformation
+        # so input here is emb_dim nodes
+        # output is vocab_size nodes
         self.out_head = nn.Linear(
             cfg["emb_dim"], cfg["vocab_size"], bias=False
         )
 
     def forward(self, in_idx):
         batch_size, seq_len = in_idx.shape
-        tok_embeds = self.tok_emb(in_idx)
+        # convert batch of sentences in token numbers -> embedding vectors
+        tok_embeds = self.tok_emb(in_idx) #  dim: (b,T,d_in)
 
+        # add the positional embedding
+        # see above: these are learned vectors
+        # note that positional embedding will be the same for the nth token of each batch
+        #  so this only produces a positional embedding vector for each token position
+        #  each T position -> NOT each (b,T). batch doesn't matter
         pos_embeds = self.pos_emb(
             torch.arange(seq_len, device=in_idx.device)
-        )
+        ) #  dim (seq_len, d_in) in the end
         x = tok_embeds + pos_embeds
         x = self.drop_emb(x)
         x = self.trf_blocks(x)
@@ -386,14 +404,20 @@ print(out2)
 # listing 4.8
 def generate_text_simple(model, idx,
                          max_new_tokens, context_size): 
+    # iteratively generate new tokens
     for _ in range(max_new_tokens):
+        # only take a context_size window from the end
         idx_cond = idx[:, -context_size:]
+        # don't calculate gradients, that is a waste here
         with torch.no_grad():
             logits = model(idx_cond)
-
-        logits = logits[:, -1, :]
+        # look at last row only, because this gives logits for next token
+        logits = logits[:, -1, :] 
+        # do softmax, but don't really need to here as we are taking largest
         probas = torch.softmax(logits, dim=-1)
+        # could do this next step directly on logits
         idx_next = torch.argmax(probas, dim=-1, keepdim=True)
+        # add the token to the end of the token set
         idx = torch.cat((idx, idx_next), dim=1)
     return idx
 
