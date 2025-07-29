@@ -6,6 +6,8 @@
 # libraries
 import torch
 import torch.nn as nn
+import tiktoken
+
 
 # !!!!!!!!!!!!!!!!!!!!
 # from chapter 4
@@ -275,10 +277,12 @@ class GPTModel(nn.Module):
 def make_tokenized_batch(batch):
     # starting with list of sentences, returns tokenized list
     # batch is batch of sentences in text form dim: num of sentences
+    tokenizer = tiktoken.get_encoding("gpt2")
     batchout = []
     for i in range(len(batch)):
         batchout.append(torch.tensor(tokenizer.encode(batch[i])))
-    return batchout
+    batchoutstack = torch.stack(batchout, dim=0)
+    return batchoutstack
 
 def setup_model(cfg):
     # cfg must be the dictionary with parameters for configuration
@@ -303,19 +307,33 @@ def forward_model(model, batch):
 
 # %%
 # testing GPT
-torch.manual_seed(123)
+#torch.manual_seed(123)
 
 # KEY LINE: setup the model
-model = GPTModel(GPT_CONFIG_124M)
+#model = GPTModel(GPT_CONFIG_124M)
 
-model.eval()
-out = model(batch)
-print("Input batch:\n", batch)
+#model.eval()
+#out = model(batch)
+#print("Input batch:\n", batch)
+#print("\nOutput shape:", out.shape)
+#print(out)
+
+# %%
+# test my functions
+model = setup_model(GPT_CONFIG_124M)
+batch = ["The cat ate the little", "The dog ran with a"]
+batchtokenized = make_tokenized_batch(batch)
+print(batch)
+print(batchtokenized)
+out = forward_model(model, batchtokenized)
+print("Input batch:\n", batchtokenized)
 print("\nOutput shape:", out.shape)
 print(out)
 
 # %%
-# a second test
+
+# %%
+# a  test
 tokenizer = tiktoken.get_encoding("gpt2")
 batch2 = []
 txt1 = "The cat ate the big white"
@@ -379,5 +397,36 @@ res = generate_text_simple(
 )
 print(res)
 print(res.shape)
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!
+# chapter 5 actual
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# %%
+# token untilities
+# listing 5.1
+import tiktoken
+# from chapter04 import generate_text_simple
+
+def text_to_token_ids(text, tokenizer):
+    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+    return encoded_tensor
+
+def token_ids_to_text(token_ids, tokenizer):
+    flat = token_ids.squeeze(0)
+    return tokenizer.decode(flat.tolist())
+
+start_context = "The cat ate the little"
+tokenizer = tiktoken.get_encoding("gpt2")
+
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(start_context, tokenizer),
+    max_new_tokens=10,
+    context_size=GPT_CONFIG_124M["context_length"]
+)
+print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
 
 # %%
