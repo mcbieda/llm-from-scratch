@@ -303,13 +303,21 @@ class TransformerBlock(nn.Module):
         self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
 
     def forward(self, x):
+        # each block has layernorm done with the input, the attention head, dropout for training, then
+        #  shortcut connection is added back
+        # note d_in=d_out=emb_dim for all of this
+    
+        shortcut = x #  dim: (B,T,d_in)
+        x = self.norm1(x) #  dim: (B,T,d_in)
+        x = self.att(x) #  dim: (B,T,d_out)
+        x = self.drop_shortcut(x) # dim: (B,T,d_out)
+        x = x + shortcut # add in the original input (shortcut) - still (B,T,d_out)
 
-        shortcut = x
-        x = self.norm1(x)
-        x = self.att(x)
-        x = self.drop_shortcut(x)
-        x = x + shortcut
-
+        # this is post-attention
+        # do layer norm with the input, which has shortcut added; do feedforward;
+        #   dropout for training; add the shortcut back and return output
+        # IMPORTANT NOTE ON SHORTCUT: this is always the input to this section - so the shortcut
+        #   here is different from the shortcut in the above part
         shortcut = x
         x = self.norm2(x)
         x = self.ff(x)
@@ -323,8 +331,9 @@ class TransformerBlock(nn.Module):
 # listing 4.7
 class GPTModel(nn.Module):
     def __init__(self, cfg):
-
+        # note initialize inherited class
         super().__init__()
+        # cfg is dictionary holding key:value for parameters (parameter name:value)
         # embedding, token and position and setup dropout for learning at embedding layer
         # token and positional embedding are LEARNED parameters
         self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
@@ -349,6 +358,8 @@ class GPTModel(nn.Module):
         )
 
     def forward(self, in_idx):
+        # in_idx is input sentences in token number format
+        # each input sentence converted in token numbers by tokenizer
         batch_size, seq_len = in_idx.shape
         # convert batch of sentences in token numbers -> embedding vectors
         tok_embeds = self.tok_emb(in_idx) #  dim: (b,T,d_in)
@@ -367,6 +378,41 @@ class GPTModel(nn.Module):
         x = self.final_norm(x)
         logits = self.out_head(x)
         return logits
+
+# %%
+# functions: forward model
+# run make_tokenized_batch
+# run setup_model
+# run forward_model
+
+def make_tokenized_batch(batch):
+    # starting with list of sentences, returns tokenized list
+    # batch is batch of sentences in text form dim: num of sentences
+    batchout = []
+    for i in range(len(batch)):
+        batchout.append(torch.tensor(tokenizer.encode(batch[i])))
+    return batchout
+
+def setup_model(cfg):
+    # cfg must be the dictionary with parameters for configuration
+    # eg GPT_CONFIG_124M
+    torch.manual_seed(123)
+    model = GPTModel(cfg)
+    return model
+
+def forward_model(model, batch):
+    # model is usually from setup_model
+    # batch is usually from make_tokenized_batch
+    model.eval()
+    res = model(batch)
+    return res
+
+
+
+
+
+                        
+
 
 # %%
 # testing GPT
@@ -404,6 +450,7 @@ print(out2)
 # listing 4.8
 def generate_text_simple(model, idx,
                          max_new_tokens, context_size): 
+    # idx is the tokenized batch dim (B,T)
     # iteratively generate new tokens
     for _ in range(max_new_tokens):
         # only take a context_size window from the end
@@ -411,7 +458,7 @@ def generate_text_simple(model, idx,
         # don't calculate gradients, that is a waste here
         with torch.no_grad():
             logits = model(idx_cond)
-        # look at last row only, because this gives logits for next token
+        # look at last row only in each batch, because this gives logits for next token
         logits = logits[:, -1, :] 
         # do softmax, but don't really need to here as we are taking largest
         probas = torch.softmax(logits, dim=-1)
