@@ -295,7 +295,8 @@ def forward_model(model, batch):
     # model is usually from setup_model
     # batch is usually from make_tokenized_batch
     model.eval()
-    res = model(batch)
+    with torch.no_grad():
+        res = model(batch)
     return res
 
 
@@ -330,7 +331,6 @@ print("Input batch:\n", batchtokenized)
 print("\nOutput shape:", out.shape)
 print(out)
 
-# %%
 
 # %%
 # a  test
@@ -410,6 +410,7 @@ import tiktoken
 # from chapter04 import generate_text_simple
 
 def text_to_token_ids(text, tokenizer):
+    # text must be a string
     encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
     encoded_tensor = torch.tensor(encoded).unsqueeze(0)
     return encoded_tensor
@@ -418,9 +419,10 @@ def token_ids_to_text(token_ids, tokenizer):
     flat = token_ids.squeeze(0)
     return tokenizer.decode(flat.tolist())
 
+# %%
+# run the model on some text
 start_context = "The cat ate the little"
 tokenizer = tiktoken.get_encoding("gpt2")
-
 token_ids = generate_text_simple(
     model=model,
     idx=text_to_token_ids(start_context, tokenizer),
@@ -429,4 +431,3 @@ token_ids = generate_text_simple(
 )
 print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
 
-# %%
