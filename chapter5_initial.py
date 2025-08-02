@@ -18,7 +18,7 @@ import tiktoken
 # start with GPT-2
 GPT_CONFIG_124M = {
     "vocab_size": 50257,     # Vocabulary size
-    "context_length": 1024,  # Context length
+    "context_length": 256,  # Context length
     "emb_dim": 768,          # Embedding dimension
     "n_heads": 12,           # Number of attention heads
     "n_layers": 12,          # Number of layers
@@ -491,3 +491,82 @@ def create_dataloader_v1(txt, batch_size=4, max_length=256,
     return dataloader
 
 # %%
+# train and validate loader
+torch.manual_seed(123)
+train_loader = create_dataloader_v1(
+    train_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride = GPT_CONFIG_124M["context_length"],
+    drop_last=True,
+    # shuffle during training so that batches are different in different epochs
+    shuffle=True,
+    num_workers=0
+)
+val_loader = create_dataloader_v1(
+    val_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride = GPT_CONFIG_124M["context_length"],
+    drop_last=False,
+    # no shuffle during training so that batches are same
+    shuffle=False,
+    num_workers=0
+)
+
+# %%
+# loss function
+def calc_loss_batch(input_batch, target_batch, model, device):
+    input_batch = input_batch.to(device)
+    target_batch = target_batch.to(device)
+    logits=model(input_batch)
+    loss = torch.nn.functional.cross_entropy(
+        logits.flatten(0,1), target_batch.flatten()
+    )
+    return loss
+
+# %%
+# listing 5.2
+# function to calculate loss
+def calc_loss_loader(data_loader,model, device, num_batches=None):
+    total_loss=0
+    if len(data_loader)==0:
+        return float("nan")
+    elif num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i< num_batches:
+            loss = calc_loss_batch(
+                input_batch, target_batch, model, device
+            )
+            total_loss += loss.item()
+        else:
+            break
+    return total_loss/num_batches
+
+# %%
+# beginning loss check
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+with torch.no_grad():
+    train_loss=calc_loss_loader(train_loader, model, device)
+    val_loss = calc_loss_loader(val_loader, model, device)
+print("train loss:", train_loss)
+print("val loss:", val_loss)
+
+# %%
+# test dimensions
+# note on output: there are only 5145 total tokens in the set; each batch is 512
+print("Train loader:")
+for i, (x, y) in enumerate(train_loader):
+    print(f"batch: {i}, input shape: {x.shape}, output shape: {y.shape}")
+
+print("\nValidation loader:")
+for i, (x, y) in enumerate(val_loader):
+    print(f"batch: {i}, input shape: {x.shape}, output shape: {y.shape}")
+
+# %%
+
+
