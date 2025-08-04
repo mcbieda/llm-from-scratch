@@ -438,7 +438,7 @@ with open(filenm, 'r', encoding='utf-8') as f:
     text_data = f.read()
 
 # %%
-# check length
+# check length of dataset and num characters and total tokens
 total_characters = len(text_data)
 total_tokens = len(tokenizer.encode(text_data))
 print("Characters:", total_characters)
@@ -559,13 +559,120 @@ print("val loss:", val_loss)
 # %%
 # test dimensions
 # note on output: there are only 5145 total tokens in the set; each batch is 512
-print("Train loader:")
+# MATH around this
+
+# total_tokens was calculated above; train_ratio set above
+num_val_tokens = int(total_tokens * (1 - train_ratio))
+num_train_tokens = int(total_tokens * train_ratio)
+print(f"TOKEN MATH: int num train tokens: {num_train_tokens}, int num val tokens: {num_val_tokens}")
+# each batch is 2 x 256 because 2 examples of 256. So total is 512 per batch
+total_batch_size = 2 * 256 #  FIX: kill hardcoding
+num_val_batch = int(num_val_tokens/total_batch_size)
+num_train_batch = int(num_train_tokens/total_batch_size)
+print(f"TOKEN MATH: int num train batches: {num_train_batch}, int num val batch: {num_val_batch}")
+
+print("\nTrain loader:")
 for i, (x, y) in enumerate(train_loader):
     print(f"batch: {i}, input shape: {x.shape}, output shape: {y.shape}")
 
 print("\nValidation loader:")
 for i, (x, y) in enumerate(val_loader):
     print(f"batch: {i}, input shape: {x.shape}, output shape: {y.shape}")
+
+
+# !!!!!!!!!!!!
+# TRAINING PART
+# !!!!!!!!!!!!
+
+# %%
+# functions: train model and evaluate model
+def train_model_simple(model, train_loader, val_loader, optimizer, device,
+                       num_epochs,eval_freq,eval_iter,start_context, tokenizer):
+    train_losses,val_losses, track_tokens_seen = [],[],[]
+    tokens_seen, global_step = 0, -1
+
+    for epoch in range(num_epochs):
+        model.train()
+        for input_batch, target_batch in train_loader:
+            optimizer.zero_grad()
+            loss=calc_loss_batch(
+                input_batch, target_batch, model, device
+            )
+            loss.backward()
+            optimizer.step()
+            tokens_seen += input_batch.numel()
+            global_step += 1
+
+            if global_step % eval_freq == 0:
+                train_loss, val_loss = evaluate_model(
+                    model, train_loader, val_loader, device, eval_iter
+                )
+                train_losses.append(train_loss)
+                val_losses.append(val_loss)
+                track_tokens_seen.append(tokens_seen)
+                print(f"Ep {epoch+1} (Step {global_step:06d}): "
+                      f"Train loss {train_loss:.3f}, "
+                      f"Val loss {val_loss:.3f}")
+                
+        generate_and_print_sample(
+            model, tokenizer, device, start_context
+        )
+    return train_losses, val_losses, track_tokens_seen
+
+def evaluate_model(model, train_loader, val_loader, device, eval_iter):
+    model.eval()
+    with torch.no_grad():
+        train_loss = calc_loss_loader(
+            train_loader, model, device, num_batches=eval_iter
+        )
+        val_loss = calc_loss_loader(
+            val_loader, model, device, num_batches=eval_iter
+        )
+    model.train()
+    return train_loss, val_loss
+
+def generate_and_print_sample(model, tokenizer, device, start_context):
+    model.eval()
+    #context_size=model.pos_embed.weight.shape[0]
+    # MB temp override, due to error
+    context_size = 256
+    encoded = text_to_token_ids(start_context, tokenizer).to(device)
+    with torch.no_grad():
+        token_ids = generate_text_simple(
+            model=model, idx=encoded,
+            max_new_tokens=50, context_size=context_size
+        )
+    decoded_text = token_ids_to_text(token_ids, tokenizer)
+    print(decoded_text.replace("\n", " "))
+    model.train()
+
+# %%
+# TRAIN MODEL
+
+# MB add some timing
+from datetime import datetime
+start_time = datetime.now()
+print(start_time)
+
+torch.manual_seed(123)
+model=GPTModel(GPT_CONFIG_124M)
+model.to(device)
+optimizer=torch.optim.AdamW(
+    model.parameters(),
+    lr=0.0004, weight_decay=0.1
+)
+num_epochs=10
+train_losses, val_losses, tokens_seen = train_model_simple(
+    model, train_loader, val_loader, optimizer, device,
+    num_epochs = num_epochs, eval_freq=5, eval_iter=5,
+    start_context = "Every effort moves you", tokenizer=tokenizer
+)
+end_time =datetime.now())
+print(f"end time is {end_time}")
+total_time = end_time - start_time
+print(f"total time = {total_time}")
+
+
 
 # %%
 
