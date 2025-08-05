@@ -523,7 +523,8 @@ def calc_loss_batch(input_batch, target_batch, model, device):
     loss = torch.nn.functional.cross_entropy(
         logits.flatten(0,1), target_batch.flatten()
     )
-    return loss
+    # print(f"single batch loss is {loss}")  # added to look at it
+    return loss  # scalar
 
 # %%
 # listing 5.2
@@ -578,6 +579,19 @@ for i, (x, y) in enumerate(train_loader):
 print("\nValidation loader:")
 for i, (x, y) in enumerate(val_loader):
     print(f"batch: {i}, input shape: {x.shape}, output shape: {y.shape}")
+
+
+# %%
+# LOOK AT ENTRIES IN LOADERS  
+def loader_text_examine(loader,examplenum=0, tokenizer=tokenizer):
+    # loader is like train_loader
+    # examplenum is example num within batch
+    # note batch =0 and example=0 will always exist
+
+    # thisexample would be a tuple with (train, target)
+    thisexample = loader.dataset[examplenum]
+    thisexample_decode = token_ids_to_text(thisexample[0], tokenizer)
+    print(thisexample_decode.replace("\n", " "))
 
 
 # !!!!!!!!!!!!
@@ -647,27 +661,55 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
     model.train()
 
 # %%
-# TRAIN MODEL
+# SETUP FOR TRAIN MODEL - from scratch
 
+
+
+torch.manual_seed(123)
+model=GPTModel(GPT_CONFIG_124M)
+model.to(device)
+
+
+# MB add for intel CPU only!
+if IPEXflag:
+    import intel_extension_for_pytorch as ipex
+    model = model.to(memory_format=torch.channels_last)
+
+# %%
+# TRAIN MAIN LOOP - can be used after reloading model
+
+# establishs IPEXflag
+IPEXflag = True
 # MB add some timing
 from datetime import datetime
 start_time = datetime.now()
 print(start_time)
 
-torch.manual_seed(123)
-model=GPTModel(GPT_CONFIG_124M)
-model.to(device)
+lrval = 0.0004
+weight_decayval = 0.1
+print(f"learning rate:{lrval}, weight_decay:{weight_decayval}")
 optimizer=torch.optim.AdamW(
     model.parameters(),
-    lr=0.0004, weight_decay=0.1
+    # lr=0.0004 #  this is the suggested, but I am going to increase
+    # weight_decay was 0.1, will make 0.02
+    lr=lrval, weight_decay=weight_decayval
 )
-num_epochs=10
+
+# added below by MB to use the IPEX package
+if IPEXflag:
+    model, optimizer = ipex.optimize(model,
+                                    optimizer=optimizer,
+                                    dtype=torch.float32,   # or torch.float32
+                                    inplace=True)           # keep references
+
+# back to usual code
+num_epochs=20 # MB - this is usually 10! for this purpose
 train_losses, val_losses, tokens_seen = train_model_simple(
     model, train_loader, val_loader, optimizer, device,
     num_epochs = num_epochs, eval_freq=5, eval_iter=5,
     start_context = "Every effort moves you", tokenizer=tokenizer
 )
-end_time =datetime.now())
+end_time =datetime.now()
 print(f"end time is {end_time}")
 total_time = end_time - start_time
 print(f"total time = {total_time}")
@@ -675,5 +717,66 @@ print(f"total time = {total_time}")
 
 
 # %%
+# PLOT LOSS
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
+    fig, ax1 = plt.subplots(figsize=(5, 3))
+    ax1.plot(epochs_seen, train_losses, label="Training loss")
+    ax1.plot(
+        epochs_seen, val_losses, linestyle="-.", label="Validation loss"
+    )
+    ax1.set_xlabel("Epochs")
+    ax1.set_ylabel("Loss")
+    ax1.legend(loc="upper right")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax2 = ax1.twiny()
+    ax2.plot(tokens_seen, train_losses, alpha=0)
+    ax2.set_xlabel("Tokens seen")
+    fig.tight_layout()
+    plt.show()
+
+epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
+plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
 
 
+
+# %%
+# !!!!!!!!!!!!!!!!!!!
+# DO NOT RUN BELOW HERE EXCEPT TO SAVE OR LOAD A MODEL
+# !!!!!!!!!!!!!!!!!!!
+
+
+# %% save model
+# save model and optimizer
+filepath = "/home/markb/llm-from-scratch/output/"
+descripstr ="lrp0004wdp15_20epoch"
+filenm = "model_and_optimizer_" + descripstr +".pth"
+fullnm = filepath + filenm
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    }, 
+    fullnm
+)
+
+
+# %%
+# LOAD MODEL AND OPTIMIZER
+
+# these values must be adjusted!!
+filepath = "/home/markb/llm-from-scratch/output/"
+descripstr ="lrp0004wdp15"
+filenm = "model_and_optimizer_" + descripstr +".pth"
+fullnm = filepath + filenm
+lrval = 0.0004
+wdval = 0.15
+
+# basic load of model and optimizer params
+checkpoint = torch.load(fullnm, map_location=device)
+model = GPTModel(GPT_CONFIG_124M)
+model.load_state_dict(checkpoint["model_state_dict"])
+optimizer = torch.optim.AdamW(model.parameters(), lr=lrval, weight_decay=wdval)
+optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+model.train();
+# %%
