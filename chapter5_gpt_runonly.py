@@ -319,17 +319,20 @@ def token_ids_to_text(token_ids, tokenizer):
 
 # %%
 # run the model on some text
-start_context = "The cat ate the little"
-tokenizer = tiktoken.get_encoding("gpt2")
-token_ids = generate_text_simple(
-    model=model,
-    idx=text_to_token_ids(start_context, tokenizer),
-    max_new_tokens=10,
-    context_size=GPT_CONFIG_124M["context_length"]
-)
-print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+#start_context = "The cat ate the little"
+#tokenizer = tiktoken.get_encoding("gpt2")
+#token_ids = generate_text_simple(
+#    model=model,
+#    idx=text_to_token_ids(start_context, tokenizer),
+#    max_new_tokens=10,
+#    context_size=GPT_CONFIG_124M["context_length"]
+#)
+#print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
 
 
+# %%
+# FUNCTION - generate and print sample
+# important: had to hardcode the context_size here because wasn't working to get from model
 def generate_and_print_sample(model, tokenizer, device, start_context):
     model.eval()
     #context_size=model.pos_embed.weight.shape[0]
@@ -358,18 +361,20 @@ fullnm = filepath + filenm
 #lrval = 0.0004
 # wdval = 0.15
 
-# basic load of model 
+# basic load of model/optimizer
+# only setup for inference, don't put params in optimizer
 device = "cpu"
 checkpoint = torch.load(fullnm, map_location=device)
 model = GPTModel(GPT_CONFIG_124M)
 model.load_state_dict(checkpoint["model_state_dict"])
+model.eval()
 #optimizer = torch.optim.AdamW(model.parameters(), lr=lrval, weight_decay=wdval)
 #optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 # model.train();
 
 
 # %%
-# run the model on some text
+# !!RUN MODEL ON TEXT!!
 torch.manual_seed(123)
 start_context = "even through the prism of"
 tokenizer = tiktoken.get_encoding("gpt2")
