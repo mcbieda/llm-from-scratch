@@ -273,7 +273,7 @@ class GPTModel(nn.Module):
 
 
 # %%
-# generate text
+# generate text as token ids and probas
 # listing 4.8
 def generate_text_simple(model, idx,
                          max_new_tokens, context_size): 
@@ -294,6 +294,24 @@ def generate_text_simple(model, idx,
         # add the token to the end of the token set
         idx = torch.cat((idx, idx_next), dim=1)
     return idx
+
+def get_next_token_probas(model, idx, context_size, temperature=0.0): 
+    # idx is the tokenized batch dim (B,T)
+    # text can be converted to idx simply via text_to_token_ids()
+    # only take a context_size window from the end
+    idx_cond = idx[:, -context_size:]
+    # don't calculate gradients, that is a waste here
+    with torch.no_grad():
+        logits = model(idx_cond)
+    # look at last row only in each batch, because this gives logits for next token
+    logits = logits[:, -1, :] 
+    if temperature > 0.0:
+        logits = logits/temperature
+    # softmax probabilities (probas)
+    probas = torch.softmax(logits, dim=-1)
+    return probas
+
+
 
 
 
@@ -317,17 +335,6 @@ def token_ids_to_text(token_ids, tokenizer):
     flat = token_ids.squeeze(0)
     return tokenizer.decode(flat.tolist())
 
-# %%
-# run the model on some text
-#start_context = "The cat ate the little"
-#tokenizer = tiktoken.get_encoding("gpt2")
-#token_ids = generate_text_simple(
-#    model=model,
-#    idx=text_to_token_ids(start_context, tokenizer),
-#    max_new_tokens=10,
-#    context_size=GPT_CONFIG_124M["context_length"]
-#)
-#print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
 
 
 # %%
@@ -385,5 +392,40 @@ token_ids = generate_text_simple(
     context_size=GPT_CONFIG_124M["context_length"]
 )
 print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+
+# %%
+# EXPERIMENT: probas
+# uses new function get_next_token_probas
+torch.manual_seed(123)
+start_context = "even through the prism of"
+tokenizer = tiktoken.get_encoding("gpt2")
+
+
+# this will get the probabilities across the vocab for next token
+# playing with temperature here
+#  temp = 1.0 is base model; temp = 2.0 is dramatic! temp = 0.5 really pushes toward one
+next_token_probas = get_next_token_probas(
+    model=model,
+    idx=text_to_token_ids(start_context, tokenizer),
+    context_size=GPT_CONFIG_124M["context_length"],
+    temperature=0.5
+)
+
+# distribution, approx
+print_sampled_tokens(next_token_probas)
+
+
+# get the top one
+best_token_id = torch.argmax(next_token_probas)
+best_token = tokenizer.decode([best_token_id])
+print(f"best_token_id: {best_token_id}, token: {best_token}")
+
+# get the top 3 and show probabilities
+# note really big effect of temperature above: 0.5 to 1 to 2 is enormous
+torch.manual_seed(123)
+topk_values, topk_indices = torch.topk(next_token_probas, k=10)
+best_tokens = tokenizer.decode((topk_indices.squeeze()).tolist())
+print(f"indices: {topk_indices}, tokens: {best_tokens}, probs: {topk_values}")
+
 
 # %%
