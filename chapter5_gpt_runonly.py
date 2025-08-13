@@ -335,6 +335,10 @@ def token_ids_to_text(token_ids, tokenizer):
     flat = token_ids.squeeze(0)
     return tokenizer.decode(flat.tolist())
 
+def token_ids_to_list(token_ids, tokenizer):
+    return [tokenizer.decode_single_token_bytes(tid).decode("utf-8", errors="replace") for tid in token_ids]
+
+
 
 
 # %%
@@ -355,12 +359,46 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
     print(decoded_text.replace("\n", " "))
     model.train()
 
+# %%
+# FUNCTION: generate tokenids with topK and temperature
+def generate_topk_temp(model, idx, max_new_tokens, context_size,
+             temperature=0.0, top_k=None, eos_id=None):
+    # idx is a list? or tensor? of tokens
+    # returns token_ids, not text
+    for _ in range(max_new_tokens):
+        idx_cond =  idx[:, -context_size:]
+        with torch.no_grad():
+            logits =model(idx_cond)
+        logits = logits[:, -1, :] # can handle a batch
+        if top_k is not None:
+            top_logits, _ = torch.topk(logits, top_k)
+            min_val = top_logits[:,-1]
+            logits = torch.where(
+                logits < min_val,
+                torch.tensor(float('-inf')).to(logits.device),
+                logits
+            )
+        if temperature > 0.0:
+            logits = logits/temperature
+            probs = torch.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+        else:
+            idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+        if idx_next == eos_id:
+            break
+        idx = torch.cat((idx, idx_next), dim=1)
+    return idx
+
+    
+
 
 
 # %%
-# LOAD MODEL AND OPTIMIZER
+# !!!!!!!!!!!!!!! LOAD MODEL AND OPTIMIZER !!!!!!!!!!!!!!!!!!!!!
+# note this is where different models can be loaded
+# currently, am only using model state_dict so can do inference
 
-# these values must be adjusted!!
+# these values can be adjusted!!
 filepath = "/home/markb/llm-from-scratch/output/"
 descripstr ="lrp0004wdp15"
 filenm = "model_and_optimizer_" + descripstr +".pth"
@@ -381,7 +419,7 @@ model.eval()
 
 
 # %%
-# !!RUN MODEL ON TEXT!!
+# !!!!!!!!!!!!!!RUN MODEL ON TEXT (best token returned) !!!!!!!!!!!!!!!!
 torch.manual_seed(123)
 start_context = "even through the prism of"
 tokenizer = tiktoken.get_encoding("gpt2")
@@ -391,7 +429,11 @@ token_ids = generate_text_simple(
     max_new_tokens=10,
     context_size=GPT_CONFIG_124M["context_length"]
 )
+print(f"Input text: {start_context}")
 print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+
+# %%
+# !!!!!!!!!!!!!!!!!! JUST EXPERIMENTS BELOW THIS POINT !!!!!!!!!!!!!
 
 # %%
 # EXPERIMENT: probas
@@ -404,15 +446,15 @@ tokenizer = tiktoken.get_encoding("gpt2")
 # this will get the probabilities across the vocab for next token
 # playing with temperature here
 #  temp = 1.0 is base model; temp = 2.0 is dramatic! temp = 0.5 really pushes toward one
+temperature = 0.5
 next_token_probas = get_next_token_probas(
     model=model,
     idx=text_to_token_ids(start_context, tokenizer),
     context_size=GPT_CONFIG_124M["context_length"],
-    temperature=0.5
+    temperature=temperature
 )
 
-# distribution, approx
-print_sampled_tokens(next_token_probas)
+
 
 
 # get the top one
@@ -423,9 +465,40 @@ print(f"best_token_id: {best_token_id}, token: {best_token}")
 # get the top 3 and show probabilities
 # note really big effect of temperature above: 0.5 to 1 to 2 is enormous
 torch.manual_seed(123)
-topk_values, topk_indices = torch.topk(next_token_probas, k=10)
-best_tokens = tokenizer.decode((topk_indices.squeeze()).tolist())
-print(f"indices: {topk_indices}, tokens: {best_tokens}, probs: {topk_values}")
+k = 10
+topk_values, topk_indices = torch.topk(next_token_probas, k=k)
+# note: improvement: could make a loop here to make nicer output
+# I don't like how the tokenizer.decode adjusts the output, would rather have a list
+best_tokens = token_ids_to_list((topk_indices.squeeze()).tolist(), tokenizer)
+print("OUTPUT of next token possibilities")
+print(f"input string:\"{start_context}\", temp:{temperature}, num_possibilities: {k}")
+print(f"tokenids: {topk_indices}, tokens: {best_tokens}")
+print(f", probs: {topk_values}")
 
+
+
+
+
+# %%
+# !!!!! RUN MODEL (text with topk and temperature)!!!!!!!!!!!!!
+# enables playing with temp and topk settings
+
+# generate_topk_temp(model, idx, max_new_tokens, context_size,
+#             temperature=0.0, top_k=None, eos_id=None)
+
+torch.manual_seed(123)
+start_context = "even through the prism of"
+idx = text_to_token_ids(start_context, tokenizer)
+max_new_tokens = 25
+context_size = 256
+temperature = 0.5
+top_k=10
+eos_id = None
+res = generate_topk_temp(model, idx, max_new_tokens, context_size,
+                         temperature, top_k,eos_id)
+res_text = token_ids_to_text(res,tokenizer)
+print(res_text)
+
+#
 
 # %%
