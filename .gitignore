@@ -41,8 +41,9 @@ Thumbs.db
 
 
 # Output and Input folders
+# note added gpt2 folder to this
 **/output/
 **/data/
 **/results/
 **/notrack/
-
+**/gpt2/
