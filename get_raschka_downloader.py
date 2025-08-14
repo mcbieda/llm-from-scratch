@@ -28,3 +28,6 @@ with open("gpt2_openai_params.pkl", "wb") as f:
     pickle.dump(params, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %%
+# load of pickle files - general form
+#with open("data.pkl", "rb") as f:
+#    loaded = pickle.load(f)   #  Never load pickles from untrusted sources
