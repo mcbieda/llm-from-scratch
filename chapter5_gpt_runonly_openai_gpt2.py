@@ -389,7 +389,127 @@ def generate_topk_temp(model, idx, max_new_tokens, context_size,
         idx = torch.cat((idx, idx_next), dim=1)
     return idx
 
+
+
+# %%
+# LOAD THE VERDICT OR OTHER FILES
+#filenm = "/home/markb/llm-from-scratch/data/the-verdict.txt"
+filenm = "/home/markb/llm-from-scratch/data/Palo-Alto-2-stories-2024.txt"
+with open(filenm, 'r', encoding='utf-8') as f:
+    text_data = f.read()
+
+# %%
+# check length of dataset and num characters and total tokens
+torch.manual_seed(123)
+tokenizer = tiktoken.get_encoding("gpt2")
+total_characters = len(text_data)
+total_tokens = len(tokenizer.encode(text_data))
+print("Characters:", total_characters)
+print("Tokens:", total_tokens)
+
+# %%
+# setup train-test split
+train_ratio=0.90
+train_index = int(train_ratio *total_characters)
+train_data = text_data[:train_index]
+val_data = text_data[train_index:]
+
+# %%
+# dataloader from chapter 2
+import torch
+from torch.utils.data import Dataset, DataLoader
+class GPTDatasetV1(Dataset):
+    def __init__(self, txt, tokenizer, max_length, stride):
+        self.input_ids = []
+        self.target_ids = []
+
+        token_ids = tokenizer.encode(txt)
+
+        for i in range(0, len(token_ids) - max_length, stride):
+            input_chunk = token_ids[i:i + max_length]
+            target_chunk = token_ids[i + 1: i + max_length + 1]
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
+
+    def __len__(self):
+        return len(self.input_ids)
+
+    def __getitem__(self, idx):
+        return self.input_ids[idx], self.target_ids[idx]
     
+    
+def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                         stride=128, shuffle=True, drop_last=True,
+                         num_workers=0):
+    tokenizer = tiktoken.get_encoding("gpt2")
+    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        num_workers=num_workers
+    )
+
+    return dataloader
+
+# %%
+# train and validate loader
+torch.manual_seed(123)
+# here I am going to keep the original context_length of 256 instead of 1024
+train_loader = create_dataloader_v1(
+    train_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride = GPT_CONFIG_124M["context_length"],
+    drop_last=True,
+    # shuffle during training so that batches are different in different epochs
+    shuffle=True,
+    num_workers=0
+)
+val_loader = create_dataloader_v1(
+    val_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride = GPT_CONFIG_124M["context_length"],
+    drop_last=False,
+    # no shuffle during training so that batches are same
+    shuffle=False,
+    num_workers=0
+)
+
+# %%
+# loss function
+def calc_loss_batch(input_batch, target_batch, model, device):
+    input_batch = input_batch.to(device)
+    target_batch = target_batch.to(device)
+    logits=model(input_batch)
+    loss = torch.nn.functional.cross_entropy(
+        logits.flatten(0,1), target_batch.flatten()
+    )
+    # print(f"single batch loss is {loss}")  # added to look at it
+    return loss  # scalar
+
+# %%
+# listing 5.2
+# function to calculate loss
+def calc_loss_loader(data_loader,model, device, num_batches=None):
+    total_loss=0
+    if len(data_loader)==0:
+        return float("nan")
+    elif num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i< num_batches:
+            loss = calc_loss_batch(
+                input_batch, target_batch, model, device
+            )
+            total_loss += loss.item()
+        else:
+            break
+    return total_loss/num_batches
 
 
 
@@ -541,7 +661,15 @@ token_ids = generate_topk_temp(
 )
 print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
 
-
+# %%
+# beginning loss check
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+gpt.to(device)
+with torch.no_grad():
+    train_loss=calc_loss_loader(train_loader, gpt, device)
+    val_loss = calc_loss_loader(val_loader, gpt, device)
+print("train loss:", train_loss)
+print("val loss:", val_loss)    
 
 # %%
 # !!!!!!!!!!!!!!!!! ONLY RUN ABOVE THIS FOR OPENAI weights!!!!!!!!!!!!!!!
