@@ -455,28 +455,28 @@ def create_dataloader_v1(txt, batch_size=4, max_length=256,
 
 # %%
 # train and validate loader
-torch.manual_seed(123)
-# here I am going to keep the original context_length of 256 instead of 1024
-train_loader = create_dataloader_v1(
-    train_data,
-    batch_size=2,
-    max_length=GPT_CONFIG_124M["context_length"],
-    stride = GPT_CONFIG_124M["context_length"],
-    drop_last=True,
-    # shuffle during training so that batches are different in different epochs
-    shuffle=True,
-    num_workers=0
-)
-val_loader = create_dataloader_v1(
-    val_data,
-    batch_size=2,
-    max_length=GPT_CONFIG_124M["context_length"],
-    stride = GPT_CONFIG_124M["context_length"],
-    drop_last=False,
-    # no shuffle during training so that batches are same
-    shuffle=False,
-    num_workers=0
-)
+# torch.manual_seed(123)
+# # here I am going to keep the original context_length of 256 instead of 1024
+# train_loader = create_dataloader_v1(
+#     train_data,
+#     batch_size=2,
+#     max_length=GPT_CONFIG_124M["context_length"],
+#     stride = GPT_CONFIG_124M["context_length"],
+#     drop_last=True,
+#     # shuffle during training so that batches are different in different epochs
+#     shuffle=True,
+#     num_workers=0
+# )
+# val_loader = create_dataloader_v1(
+#     val_data,
+#     batch_size=2,
+#     max_length=GPT_CONFIG_124M["context_length"],
+#     stride = GPT_CONFIG_124M["context_length"],
+#     drop_last=False,
+#     # no shuffle during training so that batches are same
+#     shuffle=False,
+#     num_workers=0
+# )
 
 # %%
 # loss function
