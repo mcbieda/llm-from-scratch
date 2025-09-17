@@ -222,3 +222,72 @@ BASE_CONFIG.update(model_configs[CHOOSE_MODEL])
 
 # %%
 # LISTING 6.6 ADD HERE
+#from chapter5_gpt_loadonly_openai_gpt2 import download_and_load_gpt2
+from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt
+
+model_size = CHOOSE_MODEL.split(" ")[-1].lstrip("(").rstrip(")")
+# settings, params = download_and_load_gpt2(
+#     model_size=model_size, models_dir="gpt2"
+# )
+
+# LOAD FROM PICKLE FILES - MB alteration  
+# here is for GPT2-small
+import pickle
+filepath = "/home/markb/llm-from-scratch/data/"
+
+# Load settings
+# note this is for the 124M one - need to rename
+filenm ="gpt2_openai_settings.pkl"
+fullnm = filepath+filenm
+with open(fullnm, "rb") as f:
+    settings = pickle.load(f)
+
+# Load params
+# note this is for the 124M one - need to rename
+filenm ="gpt2_openai_params.pkl"
+fullnm = filepath+filenm
+with open(fullnm, "rb") as f:
+    params = pickle.load(f)
+
+model = GPTModel(BASE_CONFIG)
+load_weights_into_gpt(model, params)
+model.eval()
+
+# %%
+# TEST LOADING AND RUNNING
+from chapter5_gpt_loadonly_openai_gpt2 import generate_text_simple
+from chapter5_gpt_loadonly_openai_gpt2 import text_to_token_ids, token_ids_to_text
+
+text_1 = "Every effort moves you"
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(text_1, tokenizer),
+    max_new_tokens=15,
+    context_size=BASE_CONFIG["context_length"]
+)
+print(token_ids_to_text(token_ids, tokenizer))
+# %%
+# freeze model
+for param in model.parameters():
+    param.requires_grad=False
+
+# %%
+# ADD LAST CLASSIFIER
+torch.manual_seed(123)
+num_classes = 2
+model.out_head = torch.nn.Linear(
+    in_features = BASE_CONFIG["emb_dim"],
+    out_features = num_classes
+)
+
+# %%
+# set last transformer block and final output block to training = True
+for param in model.trf_blocks[-1].parameters():
+    param.requires_grad = True
+for param in model.final_norm.parameters():
+    param.requires_grad = True
+
+# %%
+# Listing 6.8 here
+
+
