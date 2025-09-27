@@ -223,7 +223,7 @@ BASE_CONFIG.update(model_configs[CHOOSE_MODEL])
 # %%
 # LISTING 6.6 ADD HERE
 #from chapter5_gpt_loadonly_openai_gpt2 import download_and_load_gpt2
-from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt
+from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt, evaluate_model
 
 model_size = CHOOSE_MODEL.split(" ")[-1].lstrip("(").rstrip(")")
 # settings, params = download_and_load_gpt2(
@@ -331,3 +331,76 @@ print(f"Test: {test_accuracy*100}")
 
 
 # %%
+# calc_loss_batch function
+def calc_loss_batch(input_batch, target_batch, model, device):
+    input_batch = input_batch.to(device)
+    target_batch = target_batch.to(device)
+    logits = model(input_batch)[:,-1,:]
+    loss = torch.nn.functional.cross_entropy(logits, target_batch)
+    return loss
+
+# %%
+# calc_loss_loader function
+def calc_loss_loader(data_loader, model, device, num_batches = None):
+    total_loss = 0
+    if len(data_loader) == 0:
+        return float("nan")
+    elif num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i < num_batches:
+            loss = calc_loss_batch(input_batch, target_batch, model, device)
+            total_loss += loss.item()
+        else:
+            break
+    return total_loss/num_batches
+
+# %%
+# calc initial loss (instead of accuracy) for each dataset
+
+with torch.no_grad():
+    train_loss = calc_loss_loader(train_loader, model, device, num_batches=5)
+    val_loss = calc_loss_loader(val_loader, model, device, num_batches=5)
+    test_loss = calc_loss_loader(test_loader, model, device, num_batches=5)
+print(f"Train loss: {train_loss}")
+print(f"Val loss: {val_loss}")
+print(f"Test loss: {test_loss}")
+
+    
+    
+# %%
+# listing 6.10 here
+def train_classifier_simple(model, train_loader, val_loader, optimizer, device, num_epochs, eval_freq, eval_iter):
+    train_losses, val_losses, train_accs, val_accs = [],[],[],[]
+    examples_seen, global_step = 0, -1
+
+    for epoch in range(num_epochs):
+        model.train()
+
+        for input_batch, target_batch in train_loader:
+            optimizer.zero_grad()
+            loss = calc_loss_batch(input_batch, target_batch, model, device)
+            loss.backward()
+            optimizer.step()
+            examples_seen += input_batch.shape[0]
+            global_step += 1
+
+            if global_step % eval_freq == 0:
+                train_loss, val_loss = evaluate_model(model, train_loader, val_loader, device, eval_iter)
+                train_losses.append(train_loss)
+                val_losses.append(val_loss)
+                print(f"EPOCH:{epoch+1}")
+                print(f"Step:{global_step}")
+                print(f"Train loss: {train_loss}")
+                print(f"Val loss: {val_loss}")
+
+        train_accuracy = calc_accuracy_loader(train_loader, model, device, num_batches = eval_iter)
+        val_accuracy = calc_accuracy_loader(val_loader, model, device, num_batches = eval_iter)
+        print(f"Train accuracy: {train_accuracy*100}")
+        print(f"Val accuracy: {val_accuracy*100}")
+        train_accs.append(train_accuracy)
+        val_accs.append(val_accuracy)
+return train_losses, val_losses, train_accs, val_accs, examples_seen
+
