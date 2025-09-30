@@ -223,7 +223,7 @@ BASE_CONFIG.update(model_configs[CHOOSE_MODEL])
 # %%
 # LISTING 6.6 ADD HERE
 #from chapter5_gpt_loadonly_openai_gpt2 import download_and_load_gpt2
-from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt, evaluate_model
+from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt
 
 model_size = CHOOSE_MODEL.split(" ")[-1].lstrip("(").rstrip(")")
 # settings, params = download_and_load_gpt2(
@@ -329,6 +329,19 @@ print(f"Train: {train_accuracy*100}")
 print(f"Val: {val_accuracy*100}")
 print(f"Test: {test_accuracy*100}")
 
+# %%
+# fn: evaluate_model
+def evaluate_model(model, train_loader, val_loader, device, eval_iter):
+    model.eval()
+    with torch.no_grad():
+        train_loss = calc_loss_loader(
+            train_loader, model, device, num_batches=eval_iter
+        )
+        val_loss = calc_loss_loader(
+            val_loader, model, device, num_batches=eval_iter
+        )
+    model.train()
+    return train_loss, val_loss
 
 # %%
 # calc_loss_batch function
@@ -371,7 +384,7 @@ print(f"Test loss: {test_loss}")
     
     
 # %%
-# listing 6.10 here
+# fn: train classifier simple; listing 6.10 here
 def train_classifier_simple(model, train_loader, val_loader, optimizer, device, num_epochs, eval_freq, eval_iter):
     train_losses, val_losses, train_accs, val_accs = [],[],[],[]
     examples_seen, global_step = 0, -1
@@ -402,5 +415,161 @@ def train_classifier_simple(model, train_loader, val_loader, optimizer, device, 
         print(f"Val accuracy: {val_accuracy*100}")
         train_accs.append(train_accuracy)
         val_accs.append(val_accuracy)
-return train_losses, val_losses, train_accs, val_accs, examples_seen
+    return train_losses, val_losses, train_accs, val_accs, examples_seen
 
+# %%
+# ACTUAL TRAINING HERE
+
+import time
+start_time = time.time()
+torch.manual_seed(123)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5,weight_decay=0.1)
+num_epochs = 5
+
+# this is just for testing to speed up testing of model
+# comment out this section for actual training
+testing_temp_num_epochs = 2
+num_epochs = testing_temp_num_epochs
+
+train_losses, val_losses, train_accs, val_accs, examples_seen = train_classifier_simple(
+    model, train_loader, val_loader, optimizer, device,
+    num_epochs=num_epochs, eval_freq = 50,
+    eval_iter=5
+)
+
+end_time=time.time()
+execution_time_minutes = (end_time - start_time)/60
+print(f"Training time total (min): {execution_time_minutes}")
+
+
+# %%
+# fn: plot_values :: PLOT TRAINING RESULTS
+import matplotlib.pyplot as plt
+
+def plot_values(
+        epochs_seen, examples_seen, train_values, val_values,
+        label="loss"):
+    fig, ax1 = plt.subplots(figsize=(5, 3))
+
+
+    ax1.plot(epochs_seen, train_values, label=f"Training {label}")
+    ax1.plot(
+        epochs_seen, val_values, linestyle="-.",
+        label=f"Validation {label}"
+    )
+    ax1.set_xlabel("Epochs")
+    ax1.set_ylabel(label.capitalize())
+    ax1.legend()
+
+
+    ax2 = ax1.twiny()
+    ax2.plot(examples_seen, train_values, alpha=0)
+    ax2.set_xlabel("Examples seen")
+
+    fig.tight_layout()
+    plt.savefig(f"{label}-plot.pdf")
+    plt.show()
+
+
+# %%
+# PLOT TRAINING LOSS RESULTS
+epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
+examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
+
+plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses)
+
+# %%
+# PLOT TRAINING ACCURACY RESULTS
+# NOTE: does not work well with num_epochs = 1 because train_accs is 1 in this case
+if (num_epochs>1):
+    epochs_tensor = torch.linspace(0, num_epochs, len(train_accs))
+    examples_seen_tensor = torch.linspace(0, examples_seen, len(train_accs))
+
+    plot_values(
+        epochs_tensor, examples_seen_tensor, train_accs, val_accs,
+        label="accuracy"
+    )
+else:
+    print("num epochs is 1, so plot is not good")
+    print(f"TRAIN accuracy: {train_accs[0]}")
+    print(f"VAL accuracy: {val_accs[0]}")
+
+# %%
+# COMPARE ACCURACY: train, val, test sets
+train_accuracy = calc_accuracy_loader(train_loader, model, device)
+val_accuracy = calc_accuracy_loader(val_loader, model, device)
+test_accuracy = calc_accuracy_loader(test_loader, model, device)
+
+print(f"Training accuracy: {train_accuracy*100:.2f}%")
+print(f"Validation accuracy: {val_accuracy*100:.2f}%")
+print(f"Test accuracy: {test_accuracy*100:.2f}%")
+
+# %%
+# fn: classify a bit of text
+import torch.nn.functional as F
+def classify_review(
+        text, model, tokenizer, device, max_length=None, pad_token_id = 50256):
+    # note 50257 total tokens in vocab with the pad token, which was added above. So it is position 50256
+    model.eval()
+    input_ids =tokenizer.encode(text) # just leads to like (55,1043,999) token ids
+    supported_context_length = model.pos_emb.weight.shape[0] # 1024 for GPT-2-small
+
+    input_ids = input_ids[:min(max_length, supported_context_length)] # collect from 0 position to maximum allowed
+    len_input_ids_truncated = len(input_ids)
+    input_ids += [pad_token_id] * (max_length - len(input_ids)) # if below maximum, pad with padding token
+    input_tensor = torch.tensor(input_ids, device=device).unsqueeze(0) # add the batch dimension - so will be 2D
+
+    with torch.no_grad():
+        # note the "-1" below kills that dimension
+        logits = model(input_tensor)[:,-1,:] # choose last token position
+        predicted_label=torch.argmax(logits, dim=-1).item() # last dim is the class dim
+
+    # debug section
+    #print(f"INPUT IDS:{input_ids}")
+    print(f"length of truncated initial ids: {len_input_ids_truncated}")
+    print(logits)
+    probs = F.softmax(logits, dim=-1)
+    print(f"PROBS: {probs}")
+
+    return "spam" if predicted_label==1 else "not spam"
+
+# %%
+# DO CLASSIFICATION
+# text_1 = (
+#     "You are a winner you have been specially"
+#     " selected to receive $1000 cash or a $2000 award."
+# )
+
+# VARIOUS EXAMPLES - note that some give spam, some do not
+# text_1 = "If your number matches call 09064019014 to receive your £350 award." # spam from training
+text_1 = "Hi, the SEXYCHAT girls are waiting for you to text them. Text now for a great night chatting. send STOP to stop this service" # training set spam
+# text_1 = "URGENT! We are trying to contact U. Todays draw shows that you have won a £800 prize GUARANTEED." # training spam
+#text_1 = "Todays draw shows that you have won a £800"
+# text_1 = "URGENT! your bank indicates that you have a £350 award"
+# text_1 = "Todays Vodafone numbers ending with 4882 are selected to a receive a £350 award"
+# text_1 = "Todays Vodafone numbers ending with 4882 are selected to a receive a £350 award. If your number matches call 09064019014 to receive your £350 award."
+#text_1 = "WIN URGENT! If your number matches call 09567890986 to receive your £10000 reward." # made up spam one
+text_1 = "call 09064019014 to receive your £350 award." # partial training, spam
+text_1 = "You win -  todays Vodafone numbers: receive your £350 award when you call 09064019014." # rearranged training, spam
+text_1 = "Winner! receive your £900 award when you call 09064019014." # rearranged training, spam
+text_1 = "There is a great new opportunity for you based on your entry in the Vodafone sweepstakes. receive your £900 award when you call 09064019014" # reworked, spam
+text_1 = "just call 09064019014 for information" # reworked, NOT SPAM
+text_1 = "just call 09064019014 for £350 " # NOT SPAM
+
+print(text_1)
+print(classify_review(
+    text_1, model, tokenizer, device, max_length=train_dataset.max_length
+))
+
+# %%
+# SIDE POINT: examine the tokenizer  
+
+textLST = ["$","500","$500","£","£800", "100000078", "350", "4882"]
+for text in textLST:
+    tokenids = tokenizer.encode(text)
+    print(text," ",tokenids)
+
+# INTERPRETATION: the $ and pound sign have different encodings, this is important in this case
+
+
+# %%
