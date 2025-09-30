@@ -38,7 +38,7 @@ Thumbs.db
 *.feather
 *.pickle
 *.pkl
-
+*.pdf
 
 # Output and Input folders
 # note added gpt2 folder to this
