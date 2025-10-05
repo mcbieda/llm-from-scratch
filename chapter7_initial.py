@@ -3,9 +3,9 @@
 
 
 
-
-
-
+# %%
+# INITIAL DEFINITIONS
+device = "cpu" # hard code for now
 
 # %%
 # CHECK on end of text
@@ -14,35 +14,195 @@ tokenizer = tiktoken.get_encoding("gpt2")
 print(tokenizer.encode("<|endoftext|>", allowed_special={"<|endoftext|>"}))
 
 
+# %%
+# Load instruction data listing 7.1
+import json
+import os
+import urllib
+
+def download_and_load_file(file_path, url):
+    if not os.path.exists(file_path):
+        with urllib.request.urlopen(url) as response:
+            text_data = response.read().decode("utf-8")
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(text_data)
+    
+    with open(file_path, "r") as file:
+        data = json.load(file)
+    return data
+
+file_path = "instruction-data.json"
+url = (
+    "https://raw.githubusercontent.com/rasbt/LLMs-from-scratch"
+    "/main/ch07/01_main-chapter-code/instruction-data.json"
+)
+
+
+data = download_and_load_file(file_path, url)
+print("Number of entries:", len(data))
 
 
 # %%
-# SANITY CHECK FOR DATA LOADERS
-# for input_batch, target_batch in train_loader:
-#     pass
-# print("Input batch dimensions:", input_batch.shape)
-# print("Label batch dimensions", target_batch.shape)
+# listing 7.2 for formatting
+def format_input(entry):
+    instruction_text = (
+        f"Below is an instruction that describes a task. "
+        f"Write a response that appropriately completes the request."
+        f"\n\n### Instruction:\n{entry['instruction']}"
+    )
+
+    input_text = (
+        f"\n\n### Input:\n{entry['input']}" if entry["input"] else ""
+    )
+    return instruction_text + input_text
 
 # %%
-# EXAMINING THE DATA LOADER - will use TEST here to avoid shuffle
-# focus on test, because do NOT want shuffle
-# There are 38 batches in test_loader, each batch has 8 text messages, except the last
-# from itertools import islice
+# data: train, val, test division
+train_portion = int(len(data) * 0.85)
+test_portion = int(len(data) * 0.1)
+val_portion = len(data) - train_portion - test_portion
 
-# # Note batch 38 (37 index) is the last one here, was just curious about it
-# # in test, batch 38 is a truncated batch
-# input_batch_1, target_batch_1 = next(islice(test_loader,37,None))
+train_data = data[:train_portion]
+test_data = data[train_portion:train_portion + test_portion]
+val_data = data[train_portion + test_portion:]
 
-# # look at input batch
-# print(input_batch_1.shape)
-# print(input_batch_1[0]) #  single sentence
-# enc_1 = input_batch_1[0] # single text message, encoded
-# tokenizer.decode(enc_1.tolist())
+print("Training set length:", len(train_data))
+print("Validation set length:", len(val_data))
+print("Test set length:", len(test_data))
 
-# # LOOK at target_batch
-# print(f"ALL target for batch:{target_batch_1}")
-# print(f"target for first example in this batch:{target_batch_1[0]}")
-# print(f"target for first example in this batch as scalar:{target_batch_1[0].item()}")
+# %%
+# listing 7.4 instruction dataset class
+from torch.utils.data import Dataset
+
+class InstructionDataset(Dataset):
+    def __init__(self, data, tokenizer):
+        self.data=data
+        self.encoded_texts = []
+        for entry in data:
+            instruction_plus_input=format_input(entry)
+            response_text = f"\n\n### Response:\n{entry['output']}"
+            full_text = instruction_plus_input + response_text
+            self.encoded_texts.append(
+                tokenizer.encode(full_text)
+            )
+    def __getitem__(self,index):
+        return self.encoded_texts[index]
+    def __len__(self):
+        return len(self.data)
+
+# %%
+# listing 7.5 custom batch collate
+def custom_collate_fn(
+        batch,
+        pad_token_id=50256,
+        ignore_index = -100,
+        allowed_max_length = None,
+        device = "cpu"
+):
+    batch_max_length = max(len(item)+1 for item in batch)
+    inputs_lst, targets_lst = [],[]
+
+    for item in batch:
+        new_item = item.copy()
+        new_item += [pad_token_id]
+        padded = (
+            new_item + [pad_token_id] *
+            (batch_max_length - len(new_item))
+        )
+        # because of above, last token is always pad_token_id
+        # we always add at least one more than original, so ok
+        #   to delete last one here in inputs
+        inputs = torch.tensor(padded[:-1])
+        targets = torch.tensor(padded[1:])
+
+        # note this mask formulation would break if pad_token_id were allowed in the middle of text
+        mask = targets == pad_token_id
+        indices = torch.nonzero(mask).squeeze() # indices of pad_token_id
+        if indices.numel() >1:
+            targets[indices[1:]] = ignore_index # keep first pad_token, replace rest with -100
+        
+        if allowed_max_length is not None:
+            inputs = inputs[:allowed_max_length]
+            targets = targets[:allowed_max_length]
+        
+        inputs_lst.append(inputs)
+        targets_lst.append(targets)
+
+    inputs_tensor = torch.stack(inputs_lst).to(device)
+    targets_tensor = torch.stack(targets_lst).to(device)
+    return inputs_tensor, targets_tensor
+
+# %%
+# fn: customized collate
+from functools import partial
+
+customized_collate_fn = partial(
+    custom_collate_fn,
+    device=device,
+    allowed_max_length=1024
+)
+
+# %%
+# DATALOADERS
+from torch.utils.data import DataLoader
+
+num_workers= 0
+batch_size = 8
+
+train_dataset = InstructionDataset(train_data, tokenizer)
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=batch_size,
+    collate_fn = customized_collate_fn,
+    shuffle = True,
+    drop_last = True,
+    num_workers = num_workers
+)
+val_dataset = InstructionDataset(val_data, tokenizer)
+val_loader = DataLoader(
+    val_dataset,
+    batch_size = batch_size,
+    collate_fn = customized_collate_fn,
+    shuffle = False,
+    drop_last = False,
+    num_workers = num_workers
+)
+test_dataset = InstructionDataset(test_data, tokenizer)
+test_loader = DataLoader(
+    test_dataset,
+    batch_size = batch_size,
+    collate_fn = customized_collate_fn,
+    shuffle=False,
+    drop_last = False,
+    num_workers = num_workers
+)
+
+# %%
+# EXAMINE DATA
+print(f"val data 1: {val_data[1]}")
+format_val = format_input(val_data[1])
+print(f"formatted: {format_val}")
+
+# %% 
+# SIDE EXAMINATION OF logits, probs and crossentropy
+
+import torch
+
+logits_1 = torch.tensor(
+    [[-1.0,  1.0],
+     [-0.5,  1.5]]
+)
+
+probs = torch.softmax(logits_1, dim=1)   # or dim=-1
+print(probs)
+print(probs.sum(dim=1))  # sanity check: each row sums to 1
+
+
+
+
+
+
+
 
 
 # %%
@@ -64,7 +224,7 @@ model_configs = {
 BASE_CONFIG.update(model_configs[CHOOSE_MODEL])
 
 # %%
-# LISTING 6.6 ADD HERE
+# LOAD PICKLE DATA and load into model
 #from chapter5_gpt_loadonly_openai_gpt2 import download_and_load_gpt2
 from chapter5_gpt_loadonly_openai_gpt2 import GPTModel, load_weights_into_gpt
 
@@ -102,14 +262,19 @@ from chapter5_gpt_loadonly_openai_gpt2 import generate_text_simple
 from chapter5_gpt_loadonly_openai_gpt2 import text_to_token_ids, token_ids_to_text
 
 #text_1 = "Every effort moves you"
-text_1 = "The first step"
+# text_1 = "The first step"
+val_example = val_data[2]
+format_val_example = format_input(val_example)
+print(f"formatted val: {format_val_example}")
+
 token_ids = generate_text_simple(
     model=model,
-    idx=text_to_token_ids(text_1, tokenizer),
-    max_new_tokens=15,
+    idx=text_to_token_ids(format_val_example, tokenizer),
+    max_new_tokens=35,
     context_size=BASE_CONFIG["context_length"]
 )
-print(token_ids_to_text(token_ids, tokenizer))
+print("\n\n")
+print(f"RESULT:\n\n {token_ids_to_text(token_ids, tokenizer)}")
 
 
 # %%
@@ -136,25 +301,13 @@ def calc_loss_batch(input_batch, target_batch, model, device):
     return loss
 
 # %%
-# calc_loss_loader function
-def calc_loss_loader(data_loader, model, device, num_batches = None):
-    total_loss = 0
-    if len(data_loader) == 0:
-        return float("nan")
-    elif num_batches is None:
-        num_batches = len(data_loader)
-    else:
-        num_batches = min(num_batches, len(data_loader))
-    for i, (input_batch, target_batch) in enumerate(data_loader):
-        if i < num_batches:
-            loss = calc_loss_batch(input_batch, target_batch, model, device)
-            total_loss += loss.item()
-        else:
-            break
-    return total_loss/num_batches
+# fn load: calc_loss_loader, train_model_simple
+from chapter5_gpt_loadonly_openai_gpt2 import calc_loss_loader
+from chapter5_gpt_loadonly_openai_gpt2 import train_model_simple
+
 
 # %%
-# calc initial loss (instead of accuracy) for each dataset
+# calc initial loss for each dataset
 
 with torch.no_grad():
     train_loss = calc_loss_loader(train_loader, model, device, num_batches=5)
@@ -164,41 +317,7 @@ print(f"Train loss: {train_loss}")
 print(f"Val loss: {val_loss}")
 print(f"Test loss: {test_loss}")
 
-    
-    
-# %%
-# fn: train classifier simple; listing 6.10 here
-def train_classifier_simple(model, train_loader, val_loader, optimizer, device, num_epochs, eval_freq, eval_iter):
-    train_losses, val_losses, train_accs, val_accs = [],[],[],[]
-    examples_seen, global_step = 0, -1
 
-    for epoch in range(num_epochs):
-        model.train()
-
-        for input_batch, target_batch in train_loader:
-            optimizer.zero_grad()
-            loss = calc_loss_batch(input_batch, target_batch, model, device)
-            loss.backward()
-            optimizer.step()
-            examples_seen += input_batch.shape[0]
-            global_step += 1
-
-            if global_step % eval_freq == 0:
-                train_loss, val_loss = evaluate_model(model, train_loader, val_loader, device, eval_iter)
-                train_losses.append(train_loss)
-                val_losses.append(val_loss)
-                print(f"EPOCH:{epoch+1}")
-                print(f"Step:{global_step}")
-                print(f"Train loss: {train_loss}")
-                print(f"Val loss: {val_loss}")
-
-        train_accuracy = calc_accuracy_loader(train_loader, model, device, num_batches = eval_iter)
-        val_accuracy = calc_accuracy_loader(val_loader, model, device, num_batches = eval_iter)
-        print(f"Train accuracy: {train_accuracy*100}")
-        print(f"Val accuracy: {val_accuracy*100}")
-        train_accs.append(train_accuracy)
-        val_accs.append(val_accuracy)
-    return train_losses, val_losses, train_accs, val_accs, examples_seen
 
 # %%
 # ACTUAL TRAINING HERE
@@ -207,22 +326,39 @@ import time
 start_time = time.time()
 torch.manual_seed(123)
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5,weight_decay=0.1)
-num_epochs = 4
+num_epochs = 2
 
 # this is just for testing to speed up testing of model
 # comment out this section for actual training
 # testing_temp_num_epochs = 2
 # num_epochs = testing_temp_num_epochs
 
-train_losses, val_losses, train_accs, val_accs, examples_seen = train_classifier_simple(
+train_losses, val_losses, tokens_seen = train_model_simple(
     model, train_loader, val_loader, optimizer, device,
-    num_epochs=num_epochs, eval_freq = 50,
-    eval_iter=5
+    num_epochs=num_epochs, eval_freq=5, eval_iter=5,
+    start_context=format_input(val_data[0]), tokenizer=tokenizer
 )
 
 end_time=time.time()
 execution_time_minutes = (end_time - start_time)/60
 print(f"Training time total (min): {execution_time_minutes}")
+
+
+# %%
+# EXAMINE EXAMPLES OF OUTPUT
+val_example = test_data[34]
+format_val_example = format_input(val_example)
+print(f"original data: {val_example}")
+print(f"formatted val: {format_val_example}")
+
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(format_val_example, tokenizer),
+    max_new_tokens=35,
+    context_size=BASE_CONFIG["context_length"]
+)
+print("\n\n")
+print(f"RESULT:\n\n {token_ids_to_text(token_ids, tokenizer)}")
 
 
 # %%
@@ -261,88 +397,6 @@ examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
 
 plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses)
 
-# %%
-# PLOT TRAINING ACCURACY RESULTS
-# NOTE: does not work well with num_epochs = 1 because train_accs is 1 in this case
-if (num_epochs>1):
-    epochs_tensor = torch.linspace(0, num_epochs, len(train_accs))
-    examples_seen_tensor = torch.linspace(0, examples_seen, len(train_accs))
-
-    plot_values(
-        epochs_tensor, examples_seen_tensor, train_accs, val_accs,
-        label="accuracy"
-    )
-else:
-    print("num epochs is 1, so plot is not good")
-    print(f"TRAIN accuracy: {train_accs[0]}")
-    print(f"VAL accuracy: {val_accs[0]}")
-
-# %%
-# COMPARE ACCURACY: train, val, test sets
-train_accuracy = calc_accuracy_loader(train_loader, model, device)
-val_accuracy = calc_accuracy_loader(val_loader, model, device)
-test_accuracy = calc_accuracy_loader(test_loader, model, device)
-
-print(f"Training accuracy: {train_accuracy*100:.2f}%")
-print(f"Validation accuracy: {val_accuracy*100:.2f}%")
-print(f"Test accuracy: {test_accuracy*100:.2f}%")
-
-# %%
-# fn: classify a bit of text
-import torch.nn.functional as F
-def classify_review(
-        text, model, tokenizer, device, max_length=None, pad_token_id = 50256):
-    # note 50257 total tokens in vocab with the pad token, which was added above. So it is position 50256
-    model.eval()
-    input_ids =tokenizer.encode(text) # just leads to like (55,1043,999) token ids
-    supported_context_length = model.pos_emb.weight.shape[0] # 1024 for GPT-2-small
-
-    input_ids = input_ids[:min(max_length, supported_context_length)] # collect from 0 position to maximum allowed
-    len_input_ids_truncated = len(input_ids)
-    input_ids += [pad_token_id] * (max_length - len(input_ids)) # if below maximum, pad with padding token
-    input_tensor = torch.tensor(input_ids, device=device).unsqueeze(0) # add the batch dimension - so will be 2D
-
-    with torch.no_grad():
-        # note the "-1" below kills that dimension
-        logits = model(input_tensor)[:,-1,:] # choose last token position
-        predicted_label=torch.argmax(logits, dim=-1).item() # last dim is the class dim
-
-    # debug section
-    #print(f"INPUT IDS:{input_ids}")
-    print(f"length of truncated initial ids: {len_input_ids_truncated}")
-    print(logits)
-    probs = F.softmax(logits, dim=-1)
-    print(f"PROBS: {probs}")
-
-    return "spam" if predicted_label==1 else "not spam"
-
-# %%
-# DO CLASSIFICATION
-# text_1 = (
-#     "You are a winner you have been specially"
-#     " selected to receive $1000 cash or a $2000 award."
-# )
-
-# VARIOUS EXAMPLES - note that some give spam, some do not
-# text_1 = "If your number matches call 09064019014 to receive your £350 award." # spam from training
-text_1 = "Hi, the SEXYCHAT girls are waiting for you to text them. Text now for a great night chatting. send STOP to stop this service" # training set spam
-# text_1 = "URGENT! We are trying to contact U. Todays draw shows that you have won a £800 prize GUARANTEED." # training spam
-#text_1 = "Todays draw shows that you have won a £800"
-# text_1 = "URGENT! your bank indicates that you have a £350 award"
-# text_1 = "Todays Vodafone numbers ending with 4882 are selected to a receive a £350 award"
-# text_1 = "Todays Vodafone numbers ending with 4882 are selected to a receive a £350 award. If your number matches call 09064019014 to receive your £350 award."
-#text_1 = "WIN URGENT! If your number matches call 09567890986 to receive your £10000 reward." # made up spam one
-text_1 = "call 09064019014 to receive your £350 award." # partial training, spam
-text_1 = "You win -  todays Vodafone numbers: receive your £350 award when you call 09064019014." # rearranged training, spam
-text_1 = "Winner! receive your £900 award when you call 09064019014." # rearranged training, spam
-text_1 = "There is a great new opportunity for you based on your entry in the Vodafone sweepstakes. receive your £900 award when you call 09064019014" # reworked, spam
-text_1 = "just call 09064019014 for information" # reworked, NOT SPAM
-text_1 = "just call 09064019014 for £350 " # NOT SPAM
-
-print(text_1)
-print(classify_review(
-    text_1, model, tokenizer, device, max_length=train_dataset.max_length
-))
 
 # %%
 # SIDE POINT: examine the tokenizer  
@@ -484,37 +538,5 @@ def plot_tensor_by_index(
         plt.show()
 
     return fig, ax
-
-
-# %%
-# EXAMINE MODEL PARAMETERS for classifer layer
-# 0 is non-spam, 1 is spam
-# the module itself
-head = model.out_head            # nn.Linear(768 -> 2)
-
-# tensors (track grads)
-W = model.out_head.weight        # shape: [2, 768]
-b = model.out_head.bias          # shape: [2]
-print(W.shape, b.shape)
-
-# LOOK at bias
-print(f"Bias:{b}")
-# for 4 epochs, leads to tensor([ 0.0145, -0.0187]
-# these values are pretty small compared to the logits that I am seeing - note they are on logit scale, not probs
-
-# Look at Weights
-W_0 = W[0]
-W_1 = W[1]
-W_0_list = W_0.tolist()
-W_1_list = W_1.tolist()
-W_diff = W_1 - W_0
-W_diff_abs = abs(W_diff)
-plot_tensor_hist(W_diff_abs)
-plot_tensor_by_index(W_diff_abs, kind = "line")
-# CONCLUSION: interesting look to the histogram, not much pattern across the final 768 with weight difference
-
-# COMMENTS ON THIS
-# 1. maybe the predicted next token fits into a certain family or similarity vs the total set
-#  - like spam would predict a certain set of next tokens and nonspam a different set, but those sets having regularities
 
 
