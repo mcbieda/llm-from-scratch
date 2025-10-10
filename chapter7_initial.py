@@ -207,7 +207,7 @@ print(probs.sum(dim=1))  # sanity check: each row sums to 1
 
 # %%
 # MODEL CONFIG DICTIONARIES
-CHOOSE_MODEL = "gpt2-small (124M)"
+CHOOSE_MODEL = "gpt2-medium (355M)"
 INPUT_PROMPT = "Every effort moves"
 BASE_CONFIG = {
     "vocab_size": 50257,
@@ -237,17 +237,15 @@ model_size = CHOOSE_MODEL.split(" ")[-1].lstrip("(").rstrip(")")
 # here is for GPT2-small
 import pickle
 filepath = "/home/markb/llm-from-scratch/data/"
-
+#model_size = "355M" # can change to 355M also
 # Load settings
-# note this is for the 124M one - need to rename
-filenm ="gpt2_openai_settings.pkl"
+filenm ="gpt2_openai_settings_" + model_size +".pkl"
 fullnm = filepath+filenm
 with open(fullnm, "rb") as f:
     settings = pickle.load(f)
 
 # Load params
-# note this is for the 124M one - need to rename
-filenm ="gpt2_openai_params.pkl"
+filenm ="gpt2_openai_params_"+ model_size +".pkl"
 fullnm = filepath+filenm
 with open(fullnm, "rb") as f:
     params = pickle.load(f)
@@ -263,7 +261,7 @@ from chapter5_gpt_loadonly_openai_gpt2 import text_to_token_ids, token_ids_to_te
 
 #text_1 = "Every effort moves you"
 # text_1 = "The first step"
-val_example = val_data[2]
+val_example = val_data[42]
 format_val_example = format_input(val_example)
 print(f"formatted val: {format_val_example}")
 
@@ -345,8 +343,39 @@ print(f"Training time total (min): {execution_time_minutes}")
 
 
 # %%
+# !!!!!!!!!!!!!!!!!!!
+# DO NOT RUN BELOW HERE EXCEPT TO SAVE A MODEL
+# !!!!!!!!!!!!!!!!!!!
+
+
+# %% save model
+# save model and optimizer
+filepath = "/home/markb/llm-from-scratch/output/"
+descripstr ="chapter7_2epoch_"+ model_size
+filenm = "model_and_optimizer_" + descripstr +".pth"
+fullnm = filepath + filenm
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    }, 
+    fullnm
+)
+
+# save model only
+filepath = "/home/markb/llm-from-scratch/output/"
+descripstr ="chapter7_2epoch_"+ model_size
+filenm = "model_ONLY_" + descripstr +".pth"
+fullnm = filepath + filenm
+torch.save({
+    "model_state_dict": model.state_dict()
+    }, 
+    fullnm
+)
+
+
+# %%
 # EXAMINE EXAMPLES OF OUTPUT
-val_example = test_data[34]
+val_example = test_data[45]
 format_val_example = format_input(val_example)
 print(f"original data: {val_example}")
 print(f"formatted val: {format_val_example}")
@@ -362,181 +391,41 @@ print(f"RESULT:\n\n {token_ids_to_text(token_ids, tokenizer)}")
 
 
 # %%
-# fn: plot_values :: PLOT TRAINING RESULTS
+# PLOT LOSS
 import matplotlib.pyplot as plt
-
-def plot_values(
-        epochs_seen, examples_seen, train_values, val_values,
-        label="loss"):
+from matplotlib.ticker import MaxNLocator
+def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     fig, ax1 = plt.subplots(figsize=(5, 3))
-
-
-    ax1.plot(epochs_seen, train_values, label=f"Training {label}")
+    ax1.plot(epochs_seen, train_losses, label="Training loss")
     ax1.plot(
-        epochs_seen, val_values, linestyle="-.",
-        label=f"Validation {label}"
+        epochs_seen, val_losses, linestyle="-.", label="Validation loss"
     )
     ax1.set_xlabel("Epochs")
-    ax1.set_ylabel(label.capitalize())
-    ax1.legend()
-
-
+    ax1.set_ylabel("Loss")
+    ax1.legend(loc="upper right")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax2 = ax1.twiny()
-    ax2.plot(examples_seen, train_values, alpha=0)
-    ax2.set_xlabel("Examples seen")
-
+    ax2.plot(tokens_seen, train_losses, alpha=0)
+    ax2.set_xlabel("Tokens seen")
     fig.tight_layout()
-    plt.savefig(f"{label}-plot.pdf")
     plt.show()
 
-
-# %%
-# PLOT TRAINING LOSS RESULTS
 epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
-examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
+plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
 
-plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses)
+
+
+
+# %% 
+# FINAL LOSS VALUES
+
+with torch.no_grad():
+    train_loss = calc_loss_loader(train_loader, model, device, num_batches=5)
+    val_loss = calc_loss_loader(val_loader, model, device, num_batches=5)
+    test_loss = calc_loss_loader(test_loader, model, device, num_batches=5)
+print(f"FINAL Train loss: {train_loss}")
+print(f"FINAL Val loss: {val_loss}")
+print(f"FINAL Test loss: {test_loss}")
 
 
 # %%
-# SIDE POINT: examine the tokenizer  
-
-textLST = ["$","500","$500","£","£800", "100000078", "350", "4882"]
-for text in textLST:
-    tokenids = tokenizer.encode(text)
-    print(text," ",tokenids)
-
-# INTERPRETATION: the $ and pound sign have different encodings, this is important in this case
-
-# %%
-# tensor histogram and by position from chatGPT
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
-
-def plot_tensor_hist(t, bins=50, density=False, value_range=None, title=None, show=True, ax=None, drop_nonfinite=True):
-    """
-    Plot a histogram of values from a 1-D tensor (or array-like).
-
-    Args:
-        t: 1-D torch.Tensor (CPU or CUDA), list, or numpy array.
-        bins (int or sequence): Number of bins or explicit bin edges.
-        density (bool): Normalize to a probability density if True.
-        value_range (tuple): (min, max) range of the histogram.
-        title (str): Optional title. Defaults to a descriptive one.
-        show (bool): If True, calls plt.show().
-        ax (matplotlib.axes.Axes): Optional existing axes to draw on.
-        drop_nonfinite (bool): If True, drop NaN/Inf values before plotting.
-
-    Returns:
-        (fig, ax): The matplotlib Figure and Axes used.
-    """
-    # Convert to a flat NumPy array, safely handling torch tensors (incl. CUDA)
-    if isinstance(t, torch.Tensor):
-        data = t.detach().flatten().to("cpu").numpy()
-    else:
-        data = np.asarray(t).ravel()
-
-    if drop_nonfinite:
-        data = data[np.isfinite(data)]
-
-    if ax is None:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.figure
-
-    counts, bins_edges, patches = ax.hist(data, bins=bins, range=value_range, density=density)
-    ax.set_xlabel("Value")
-    ax.set_ylabel("Density" if density else "Count")
-    if title is None:
-        title = f"Histogram • n={len(data)} • bins={bins}"
-    ax.set_title(title)
-    ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
-
-    if show:
-        plt.show()
-
-    return fig, ax
-
-
-
-def plot_tensor_by_index(
-    t,
-    kind="line",                 # "line" | "scatter" | "bar"
-    sample=None,                 # int or None
-    figsize=(12, 4),             # make it wide by default
-    title=None,
-    show=True,
-    ax=None,
-    drop_nonfinite=True,
-    bar_width=1.0                # width for bar mode (in index units)
-):
-    """
-    Plot value vs. position (index) for a 1-D tensor/array.
-
-    Args:
-        t: 1-D torch.Tensor (CPU/CUDA), list, or numpy array.
-        kind: "line", "scatter", or "bar".
-        sample: If set and len(data) > sample, evenly subsample to this many points.
-        figsize: (width, height) in inches for a new figure.
-        title: Optional title. Auto if None.
-        show: If True, calls plt.show().
-        ax: Existing matplotlib Axes to draw on; if None, creates a new figure/axes.
-        drop_nonfinite: Drop NaN/Inf before plotting.
-        bar_width: Width of bars when kind="bar" (in index units).
-
-    Returns:
-        (fig, ax): Matplotlib Figure and Axes.
-    """
-    # Flatten & move to CPU if torch tensor
-    if isinstance(t, torch.Tensor):
-        data = t.detach().flatten().to("cpu").numpy()
-    else:
-        data = np.asarray(t).ravel()
-
-    if drop_nonfinite:
-        data = data[np.isfinite(data)]
-
-    n = data.size
-    if n == 0:
-        raise ValueError("No data to plot (empty tensor after filtering).")
-
-    # Optional even subsampling for long series
-    if isinstance(sample, int) and sample > 0 and n > sample:
-        idxs = np.linspace(0, n - 1, num=sample, dtype=int)
-        x = idxs
-        y = data[idxs]
-    else:
-        x = np.arange(n)
-        y = data
-
-    # Create axes if needed (use figsize here)
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize, dpi=100)
-    else:
-        fig = ax.figure
-
-    kind = kind.lower()
-    if kind == "scatter":
-        ax.scatter(x, y, s=8)
-    elif kind == "bar":
-        # For bars, ensure width doesn't exceed spacing between indices
-        w = min(bar_width, 0.9 if len(x) > 1 else bar_width)
-        ax.bar(x, y, width=w, align="center")
-    else:  # "line" (default)
-        ax.plot(x, y, linewidth=1)
-
-    ax.set_xlabel("Index")
-    ax.set_ylabel("Value")
-    if title is None:
-        title = f"Value by Position • n={len(y)} • kind={kind}"
-    ax.set_title(title)
-    ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
-    fig.tight_layout()
-
-    if show:
-        plt.show()
-
-    return fig, ax
-
-
