@@ -11,22 +11,27 @@ GPT_CONFIG_124M = {
 }
 
 RUN_CONFIG = {
-    "run_name": "gpt2-small_theverdict_lr4e4_wd0p15_e20",
-    "description": "gpt2-small on PubMed abstracts, 20 epochs",
+    "run_name": "gpt2-small_theverdict_lr4e4_wd0p15_e4",
+    "description": "gpt2-small on the verdict, 4 epochs",
 
     "device_name": "cpu",
 
     "model_name": "gpt2-small",
-    "model_config": GPT2_CONFIG_124M,
+    "model_config": GPT_CONFIG_124M,
     "tokenizer": "gpt2",
 
 
     "pretrained": False,
     "training_file": "/home/markb/llm-from-scratch/data/the-verdict.txt",
+    "val_file": "",
+    "test_file": "",
+    "val_ratio": 0.05,
+    "test_ratio": 0.0,
+
     "batch_size": 16,
     "lr": 4e-4,
     "weight_decay": 0.15,
-    "num_epochs": 20,
+    "num_epochs": 4,
     "seed": 42,
     "output_dir": "/home/markb/llm-from-scratch/output",
 }

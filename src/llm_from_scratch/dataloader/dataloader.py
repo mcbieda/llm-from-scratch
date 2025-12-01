@@ -9,6 +9,20 @@ import torch.nn as nn
 import tiktoken
 from torch.utils.data import Dataset, DataLoader
 
+# dataloader.py (top of file)
+
+import sys
+from pathlib import Path
+
+# this file: .../src/llm_from_scratch/dataloader/dataloader.py
+# we want:   .../src on sys.path so we can import llm_from_scratch
+SRC_DIR = Path(__file__).resolve().parents[2]  # -> .../src
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from llm_from_scratch.configs import gpt2small_config
+
 
 # %%
 # function make_tokenized_batch
@@ -79,7 +93,7 @@ def create_dataloader_v1(txt, batch_size=4, max_length=256,
 
 # %%
 # LOOK AT ENTRIES IN LOADERS  
-def loader_text_examine(loader,examplenum=0, tokenizer=tokenizer):
+def loader_text_examine(loader,examplenum, tokenizer):
     # loader is like train_loader
     # examplenum is example num within batch
     # examplenum=0 will always exist
@@ -89,9 +103,9 @@ def loader_text_examine(loader,examplenum=0, tokenizer=tokenizer):
     thisexample_decode = token_ids_to_text(thisexample[0], tokenizer)
     print(thisexample_decode.replace("\n", " "))
 
-# LOAD THE VERDICT
-def load_file(cfg):
-    filenm = cfg["training_file"] #  includes path
+# LOAD DATA FILE
+def load_file(filenm):
+    #filenm = cfg["training_file"] #  includes path
     with open(filenm, 'r', encoding='utf-8') as f:
         text_data = f.read()
     return(text_data)
@@ -108,9 +122,11 @@ def examine_data(text_data):
 # train, val and test splits
 # use only if needed
 
-def train_val_test_split(text_data, train_ratio, val_ratio, test_ratio)
+def train_val_test_split(text_data, train_ratio, val_ratio, test_ratio):
+    total_characters = len(text_data)
+    
     if test_ratio == 0.0:
-        train_index = int(train_ratio *total_characters)
+        train_index = int(train_ratio * total_characters)
         train_data = text_data[:train_index]
         val_data = text_data[train_index:]
         test_data = None
@@ -188,11 +204,62 @@ def create_dataloaders(train_data, val_data, test_data, batch_size, max_length, 
 #     stride=GPT_CONFIG_124M["context_length"]
 # )
 
+def generate_data_loaders(cfg):
+    check_flag=True
+    train_file = cfg['training_file']
+    val_file = cfg['val_file']
+    test_file = cfg['test_file']
+
+    # quick sanity check
+    if check_flag:
+        # just examine train_file
+        text_data=load_file(train_file)
+        print("check_flag is True; output of train_file")
+        print(train_file)
+        examine_data(text_data)
+        print("\n")
+
+    if (val_file=="" and test_file==""):
+        text_data=load_file(cfg['training_file'])
+        train_ratio = 1 - (cfg['val_ratio'] + cfg['test_ratio'])
+        train_data,val_data,test_data=train_val_test_split(text_data, train_ratio, cfg['val_ratio'], cfg['test_ratio'])
+        train_loader, val_loader, test_loader = create_dataloaders(
+            train_data,
+            val_data,
+            test_data,
+            batch_size=cfg['batch_size'],
+            max_length=cfg['model_config']['context_length'],
+            stride=cfg['model_config']['context_length']
+        )
+    else:
+        train_data=load_file(cfg['training_file'])
+        val_data=load_file(cfg['val_file'])
+        test_data=load_file(cfg['test_file'])
+        train_loader, val_loader, test_loader = create_dataloaders(
+            train_data,
+            val_data,
+            test_data,
+            batch_size=cfg['batch_size'],
+            max_length=cfg['model_config']['context_length'],
+            stride=cfg['model_config']['context_length']
+        )  
+    return(train_loader, val_loader, test_loader)
 
 
-
-
-
-if __name__ =="main":
+def main():
     torch.manual_seed(123)
+    cfg = gpt2small_config.RUN_CONFIG
+    tokenizer=tiktoken.get_encoding(cfg['tokenizer'])
+    train_loader, val_loader, test_loader = generate_data_loaders(cfg)
+    # add length of each loader here
+    print(f"length of train_loader: {len(train_loader)}")
+    print(f"length of val_loader: {len(val_loader)}")
+    if test_loader is not None:
+        print(f"length of test_loader: {len(test_loader)}")
+    print("CONFIG OUTPUT")
+    print(cfg)
     print("Success, no output")
+
+
+if __name__ =="__main__":
+    main()
