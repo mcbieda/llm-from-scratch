@@ -25,13 +25,14 @@ RUN_CONFIG = {
     "training_file": "/home/markb/llm-from-scratch/data/the-verdict.txt",
     "val_file": "",
     "test_file": "",
-    "val_ratio": 0.05,
+    "val_ratio": 0.10,
     "test_ratio": 0.0,
+    "stride": 128, # note context_length is in above definition
 
-    "batch_size": 16,
+    "batch_size": 2,
     "lr": 4e-4,
     "weight_decay": 0.15,
-    "num_epochs": 4,
+    "num_epochs": 10,
     "seed": 42,
     "output_dir": "/home/markb/llm-from-scratch/output",
 }

@@ -229,7 +229,7 @@ def generate_data_loaders(cfg):
             test_data,
             batch_size=cfg['batch_size'],
             max_length=cfg['model_config']['context_length'],
-            stride=cfg['model_config']['context_length']
+            stride=cfg['stride']
         )
     else:
         train_data=load_file(cfg['training_file'])
@@ -241,7 +241,7 @@ def generate_data_loaders(cfg):
             test_data,
             batch_size=cfg['batch_size'],
             max_length=cfg['model_config']['context_length'],
-            stride=cfg['model_config']['context_length']
+            stride=cfg['stride']
         )  
     return(train_loader, val_loader, test_loader)
 
@@ -252,10 +252,17 @@ def main():
     tokenizer=tiktoken.get_encoding(cfg['tokenizer'])
     train_loader, val_loader, test_loader = generate_data_loaders(cfg)
     # add length of each loader here
-    print(f"length of train_loader: {len(train_loader)}")
-    print(f"length of val_loader: {len(val_loader)}")
+    # print(f"length of train_loader: {len(train_loader)}")
+    # print(f"length of val_loader: {len(val_loader)}")
+    # if test_loader is not None:
+    #     print(f"length of test_loader: {len(test_loader)}")
+    print("Show trainer_loader first entry:")
+    loader_text_examine(train_loader,0,tokenizer)
+    print("Show val_loader first entry:")
+    loader_text_examine(val_loader,0,tokenizer)
     if test_loader is not None:
-        print(f"length of test_loader: {len(test_loader)}")
+        print("Show test_loader first entry:")
+        loader_text_examine(test_loader,0,tokenizer)
     print("CONFIG OUTPUT")
     print(cfg)
     print("Success, no output")
