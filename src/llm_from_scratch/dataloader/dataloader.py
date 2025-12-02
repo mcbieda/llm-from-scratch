@@ -112,8 +112,9 @@ def load_file(filenm):
 
 # %%
 # examine data
-def examine_data(text_data):
+def examine_data(text_data, tokenizer_name):
     total_characters = len(text_data)
+    tokenizer = tiktoken.get_encoding(tokenizer_name)
     total_tokens = len(tokenizer.encode(text_data))
     print("Characters:", total_characters)
     print("Tokens:", total_tokens)
@@ -216,7 +217,7 @@ def generate_data_loaders(cfg):
         text_data=load_file(train_file)
         print("check_flag is True; output of train_file")
         print(train_file)
-        examine_data(text_data)
+        examine_data(text_data, cfg['tokenizer'])
         print("\n")
 
     if (val_file=="" and test_file==""):
@@ -265,7 +266,7 @@ def main():
         loader_text_examine(test_loader,0,tokenizer)
     print("CONFIG OUTPUT")
     print(cfg)
-    print("Success, no output")
+    print("Success")
 
 
 if __name__ =="__main__":
