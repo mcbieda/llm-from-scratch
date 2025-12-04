@@ -253,9 +253,7 @@ class GPTModel(nn.Module):
         return logits
 
 # %%
-# functions: forward model
-# run make_tokenized_batch
-# run setup_model
+# setup and main
 
 def setup_model(cfg):
     # cfg must be the dictionary with parameters for configuration
@@ -271,10 +269,11 @@ def main():
     print(model)
     print("Success")
 
-
+# %%
+# if main
 if __name__ == "__main__":
     main()
-    
+
     
 
 
