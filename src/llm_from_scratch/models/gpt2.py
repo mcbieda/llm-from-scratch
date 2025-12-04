@@ -229,6 +229,8 @@ class GPTModel(nn.Module):
         self.out_head = nn.Linear(
             cfg["emb_dim"], cfg["vocab_size"], bias=False
         )
+        # uncomment this line to implement weight-tying, which was used by OPENAI
+        # self.out_head.weight = self.tok_emb.weight
 
     def forward(self, in_idx):
         # in_idx is input sentences in token number format
@@ -255,18 +257,20 @@ class GPTModel(nn.Module):
 # %%
 # setup and main
 
-def setup_model(cfg):
-    # cfg must be the dictionary with parameters for configuration
-    # eg GPT_CONFIG_124M
-    torch.manual_seed(123)
-    model = GPTModel(cfg)
+def setup_model(model_cfg):
+    # model_cfg is the subset of RUN_CONFIG
+    model = GPTModel(model_cfg)
     return model
 
 def main():
     cfg = gpt2small_config.RUN_CONFIG
+    torch.manual_seed(cfg['seed'])
     model_cfg = cfg['model_config']
+    print(model_cfg)
     model = setup_model(model_cfg)
     print(model)
+    totparams = sum(p.numel() for p in model.parameters())
+    print("Total number of parameters:", totparams)
     print("Success")
 
 # %%

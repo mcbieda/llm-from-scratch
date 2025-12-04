@@ -1,13 +1,31 @@
 # gpt2small_config.py
 
-GPT_CONFIG_124M = {
+# NOTES ON PARAMETER COUNTS
+# RASCHKA says 163,009,536 - this is with context_length = 1024 AND qkv_bias=FALSE
+# This is what we should use for loading OPENAI weights
+
+GPT_CONFIG_124M_OPENAI = {
+    # OPENAI version if loadign openai weights
+    # This yields the RASCHKA value of 163,009,536
+    # listed at 124M because weight tying - not currently implemented in my models
     "vocab_size": 50257,     # Vocabulary size
-    "context_length": 256,  # Context length
+    "context_length": 1024,  # Context length was 256
     "emb_dim": 768,          # Embedding dimension
     "n_heads": 12,           # Number of attention heads
     "n_layers": 12,          # Number of layers
     "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": False        # Query-Key-Value bias
+    "qkv_bias": False       # Query-Key-Value bias; False for GPT-2-small original
+}
+
+GPT_CONFIG_124M_BETTERTRAIN = {
+    # smaller context, a little more bias
+    "vocab_size": 50257,     # Vocabulary size
+    "context_length": 256,  # Context length was 256
+    "emb_dim": 768,          # Embedding dimension
+    "n_heads": 12,           # Number of attention heads
+    "n_layers": 12,          # Number of layers
+    "drop_rate": 0.1,        # Dropout rate
+    "qkv_bias": True       # Query-Key-Value bias; True in GPT-2-small
 }
 
 RUN_CONFIG = {
@@ -17,7 +35,7 @@ RUN_CONFIG = {
     "device_name": "cpu",
 
     "model_name": "gpt2-small",
-    "model_config": GPT_CONFIG_124M,
+    "model_config": GPT_CONFIG_124M_OPENAI,
     "tokenizer": "gpt2",
 
 
