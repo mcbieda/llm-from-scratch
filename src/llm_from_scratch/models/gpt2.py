@@ -9,32 +9,17 @@ import torch.nn as nn
 import tiktoken
 
 
-# !!!!!!!!!!!!!!!!!!!!
-# from chapter 4
-# !!!!!!!!!!!!!!!!!!!!
+import sys
+from pathlib import Path
 
-# %%
-# config file
-# start with GPT-2
-# 124M is GPT-2-small
-GPT_CONFIG_124M = {
-    "vocab_size": 50257,     # Vocabulary size
-    "context_length": 256,  # Context length
-    "emb_dim": 768,          # Embedding dimension
-    "n_heads": 12,           # Number of attention heads
-    "n_layers": 12,          # Number of layers
-    "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": False        # Query-Key-Value bias
-}
-GPT_CONFIG_test01 = {
-    "vocab_size": 50257,     # Vocabulary size
-    "context_length": 6,  # Context length
-    "emb_dim": 10,          # Embedding dimension
-    "n_heads": 2,           # Number of attention heads
-    "n_layers": 2,          # Number of layers
-    "drop_rate": 0.5,        # Dropout rate
-    "qkv_bias": False        # Query-Key-Value bias
-}
+# this file: .../src/llm_from_scratch/dataloader/dataloader.py
+# we want:   .../src on sys.path so we can import llm_from_scratch
+SRC_DIR = Path(__file__).resolve().parents[2]  # -> .../src
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from llm_from_scratch.configs import gpt2small_config
 
 
 
@@ -174,8 +159,6 @@ class FeedForward(nn.Module):
 # %%
 # transformer block
 
-# comment this next line because I have MultiHeadAttention declared above
-# from chapter03 import MultiHeadAttention
 
 class TransformerBlock(nn.Module):
     def __init__(self, cfg):
@@ -274,8 +257,6 @@ class GPTModel(nn.Module):
 # run make_tokenized_batch
 # run setup_model
 
-
-
 def setup_model(cfg):
     # cfg must be the dictionary with parameters for configuration
     # eg GPT_CONFIG_124M
@@ -283,9 +264,18 @@ def setup_model(cfg):
     model = GPTModel(cfg)
     return model
 
+def main():
+    cfg = gpt2small_config.RUN_CONFIG
+    model_cfg = cfg['model_config']
+    model = setup_model(model_cfg)
+    print(model)
+    print("Success")
+
 
 if __name__ == "__main__":
-    setup_model(GPT_CONFIG_124M)
+    main()
+    
+    
 
 
 
