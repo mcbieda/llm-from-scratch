@@ -1,4 +1,4 @@
-# chapter5_initial.py
+# training_utils.py
 # Mark Bieda
 # from Raschka book, with explorations
 
@@ -17,8 +17,15 @@ import tiktoken
 # run setup_model
 # run forward_model
 
+def setup_model(cfg):
+    # cfg must be the dictionary with parameters for configuration
+    # eg GPT_CONFIG_124M
+    torch.manual_seed(123)
+    model = GPTModel(cfg)
+    return model
+
 def make_tokenized_batch(batch):
-    # starting with list of sentences, returns tokenized list
+    # starting with list of sentences, returns stacked tensor
     # batch is batch of sentences in text form dim: num of sentences
     tokenizer = tiktoken.get_encoding("gpt2")
     batchout = []
@@ -27,32 +34,15 @@ def make_tokenized_batch(batch):
     batchoutstack = torch.stack(batchout, dim=0)
     return batchoutstack
 
-def setup_model(cfg):
-    # cfg must be the dictionary with parameters for configuration
-    # eg GPT_CONFIG_124M
-    torch.manual_seed(123)
-    model = GPTModel(cfg)
-    return model
-
 def forward_model(model, batch):
     # model is usually from setup_model
-    # batch is usually from make_tokenized_batch
+    # batch is usually from make_tokenized_batch; stacked tensor of tokenized values
     model.eval()
     with torch.no_grad():
         res = model(batch)
     return res
 
 
-
-
-
-                        
-
-
-
-# %%
-# a  test
-tokenizer = tiktoken.get_encoding("gpt2")
 
 
 # %%
@@ -80,16 +70,9 @@ def generate_text_simple(model, idx,
 
 
 
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!
-# chapter 5 actual
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 # %%
 # token untilities
 # listing 5.1
-import tiktoken
-# from chapter04 import generate_text_simple
 
 def text_to_token_ids(text, tokenizer):
     # text must be a string
@@ -145,11 +128,15 @@ def calc_loss_loader(data_loader,model, device, num_batches=None):
 # beginning loss check
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+model.eval() # eval mode to turn off dropout
 with torch.no_grad():
     train_loss=calc_loss_loader(train_loader, model, device)
     val_loss = calc_loss_loader(val_loader, model, device)
 print("train loss:", train_loss)
 print("val loss:", val_loss)
+model.train() # back to training mode
+
+
 
 # %%
 # test dimensions
