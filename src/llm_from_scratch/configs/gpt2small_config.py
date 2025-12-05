@@ -6,26 +6,44 @@
 
 GPT_CONFIG_124M_OPENAI = {
     # OPENAI version if loadign openai weights
-    # This yields the RASCHKA value of 163,009,536
-    # listed at 124M because weight tying - not currently implemented in my models
+    # yields RASCHKA value of 163,009,536 if weight_tying is False
+    # listed at 124M if weight_tying is True
     "vocab_size": 50257,     # Vocabulary size
-    "context_length": 1024,  # Context length was 256
+    "context_length": 1024,  # Context length was 256; this is OpenAI value
     "emb_dim": 768,          # Embedding dimension
     "n_heads": 12,           # Number of attention heads
     "n_layers": 12,          # Number of layers
     "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": False       # Query-Key-Value bias; False for GPT-2-small original
+    "qkv_bias": False,       # Query-Key-Value bias; False for GPT-2-small original
+    "weight_tying": True    # OPENAI default; I added this; Raschka has False
 }
 
 GPT_CONFIG_124M_BETTERTRAIN = {
     # smaller context, a little more bias
+    # this will be
     "vocab_size": 50257,     # Vocabulary size
-    "context_length": 256,  # Context length was 256
+    "context_length": 256,  # Context length changed from OPENAI of 1024
     "emb_dim": 768,          # Embedding dimension
     "n_heads": 12,           # Number of attention heads
     "n_layers": 12,          # Number of layers
     "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": True       # Query-Key-Value bias; True in GPT-2-small
+    "qkv_bias": False,       # Query-Key-Value bias; FALSE in original GPT-2-small
+    "weight_tying": False    # OPENAI default is True
+
+}
+
+GPT_CONFIG_124M_RASCHKA = {
+    # OPENAI version if loadign openai weights
+    # yields RASCHKA value of 163,009,536 if weight_tying is False
+    # listed at 124M if weight_tying is True
+    "vocab_size": 50257,     # Vocabulary size
+    "context_length": 256,  # Context length was 256; this is OpenAI value
+    "emb_dim": 768,          # Embedding dimension
+    "n_heads": 12,           # Number of attention heads
+    "n_layers": 12,          # Number of layers
+    "drop_rate": 0.1,        # Dropout rate
+    "qkv_bias": False,       # Query-Key-Value bias; False for GPT-2-small original
+    "weight_tying": False    # OPENAI default; I added this; Raschka has False
 }
 
 RUN_CONFIG = {

@@ -229,8 +229,9 @@ class GPTModel(nn.Module):
         self.out_head = nn.Linear(
             cfg["emb_dim"], cfg["vocab_size"], bias=False
         )
-        # uncomment this line to implement weight-tying, which was used by OPENAI
-        # self.out_head.weight = self.tok_emb.weight
+        # optional implement weight-tying, which was used by OPENAI
+        if cfg["weight_tying"]:
+            self.out_head.weight = self.tok_emb.weight
 
     def forward(self, in_idx):
         # in_idx is input sentences in token number format
