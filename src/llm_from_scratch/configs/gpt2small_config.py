@@ -47,13 +47,13 @@ GPT_CONFIG_124M_RASCHKA = {
 }
 
 RUN_CONFIG = {
-    "run_name": "gpt2-small_theverdict_lr4e4_wd0p15_e4",
+    "run_name": "gpt2-small_theverdict_temptest",
     "description": "gpt2-small on the verdict, 4 epochs",
 
     "device_name": "cpu",
 
     "model_name": "gpt2-small",
-    "model_config": GPT_CONFIG_124M_OPENAI,
+    "model_config": GPT_CONFIG_124M_BETTERTRAIN,
     "tokenizer": "gpt2",
 
 

@@ -296,7 +296,8 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
 
 
 
-# %% save model
+# %% 
+# save model
 
 def save_checkpoint(model, optimizer, cfg, epoch, global_step):
     run_dir = Path(cfg["output_dir"]) / cfg["run_name"]

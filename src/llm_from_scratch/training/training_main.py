@@ -2,8 +2,20 @@
 # Mark Bieda
 
 
-# this file: .../src/llm_from_scratch/dataloader/dataloader.py
-# we want:   .../src on sys.path so we can import llm_from_scratch
+# setup paths correctly for packages
+import sys
+from pathlib import Path
+import torch
+import torch.nn as nn
+import tiktoken
+from pathlib import Path
+import torch
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+from datetime import datetime
+from torch.utils.data import Dataset, DataLoader
+
+
 SRC_DIR = Path(__file__).resolve().parents[2]  # -> .../src
 
 if str(SRC_DIR) not in sys.path:
@@ -18,8 +30,8 @@ from llm_from_scratch.dataloader import dataloader
 def main():
     # get config
     cfg = gpt2small_config.RUN_CONFIG
-    torch.manual_seed(cfg['seed'])
     model_cfg = cfg['model_config']
+    torch.manual_seed(cfg['seed'])
     print(model_cfg)
     # modify cfg
     cfg["num_epochs"]=3
