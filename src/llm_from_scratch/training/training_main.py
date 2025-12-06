@@ -43,27 +43,28 @@ def main():
     # tokenizer
     tokenizer=tiktoken.get_encoding(cfg['tokenizer'])
     # dataloaders
-    train_loader, val_loader, test_loader = generate_data_loaders(cfg)
+    train_loader, val_loader, test_loader = dataloader.generate_data_loaders(cfg)
     print("Show trainer_loader first entry (converted to text):")
-    loader_text_examine(train_loader,0,tokenizer)
+    dataloader.loader_text_examine(train_loader,0,tokenizer)
     print("Show val_loader first entry (converted to text):")
-    loader_text_examine(val_loader,0,tokenizer)
+    dataloader.loader_text_examine(val_loader,0,tokenizer)
     if test_loader is not None:
         print("Show test_loader first entry (converted to text):")
-        loader_text_examine(test_loader,0,tokenizer)
+        dataloader.loader_text_examine(test_loader,0,tokenizer)
     # training loop
-    train_losses, val_losses, tokens_seen, global_step = train_model_simple(
+    num_epochs = cfg['num_epochs']
+    train_losses, val_losses, tokens_seen, global_step = training_utils.train_model_simple(
     model=model, train_loader=train_loader, val_loader=val_loader, 
-    optimizer=setup_optimizer(model,cfg),
+    optimizer=training_utils.setup_optimizer(model,cfg),
     device=cfg['device_name'],
-    num_epochs = cfg['num_epochs'], eval_freq=5, eval_iter=5,
+    num_epochs = num_epochs, eval_freq=5, eval_iter=5,
     start_context = "Every effort moves you", tokenizer=tokenizer
     )
     # plot output
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
-    plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
+    training_utils.plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
     # save checkpoint
-    save_checkpoint(model=model, optimizer=optimizer, cfg=cfg,
+    training_utils.save_checkpoint(model=model, optimizer=optimizer, cfg=cfg,
                     epoch=num_epochs-1, global_step=global_step)
     
 
