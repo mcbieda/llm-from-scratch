@@ -47,8 +47,8 @@ GPT_CONFIG_124M_RASCHKA = {
 }
 
 RUN_CONFIG = {
-    "run_name": "gpt2-small_theverdict_temptest",
-    "description": "gpt2-small on the verdict, 4 epochs",
+    "run_name": "gpt2-small_theverdict_2025DEC07_v2",
+    "description": "gpt2-small on the verdict",
 
     "device_name": "cpu",
 
@@ -63,12 +63,12 @@ RUN_CONFIG = {
     "test_file": "",
     "val_ratio": 0.10,
     "test_ratio": 0.0,
-    "stride": 128, # note context_length is in above definition
+    "stride": 256, # note was 128 for Raschka
 
     "batch_size": 2,
     "lr": 4e-4,
     "weight_decay": 0.15,
-    "num_epochs": 10,
+    "num_epochs": 2,
     "seed": 42,
     "output_dir": "/home/markb/llm-from-scratch/output",
 }

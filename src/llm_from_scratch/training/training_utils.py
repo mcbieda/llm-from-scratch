@@ -335,7 +335,21 @@ def save_cfg_json(cfg, epoch, global_step):
     print(f"Saved cfg to {cfg_path}")
     return cfg_path
 
-
+def save_results(cfg,train_losses, val_losses, tokens_seen, global_step):
+    epoch = cfg['num_epochs']
+    run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
+    run_dir.mkdir(parents=True, exist_ok=True) 
+    res_path = run_dir / f"epoch{epoch:03d}_step{global_step:07d}_results.json"
+    resdict = {
+        "final_train_loss": float(train_losses[-1]),
+        "final_val_loss": float(val_losses[-1]),
+        "tokens_seen": int(tokens_seen[-1]),
+        "global_step": int(global_step),
+    }
+    with open(res_path, "w") as f:
+        json.dump(resdict, f, indent=2, sort_keys=True)
+    print(f"Saved results to {res_path}")   
+    return resdict
     
 
 def save_checkpoint(model, optimizer, cfg, epoch, global_step):
