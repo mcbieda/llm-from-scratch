@@ -67,7 +67,7 @@ def main():
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
     training_utils.plot_losses(cfg,epochs_tensor, tokens_seen, train_losses, val_losses)
     # save checkpoint
-    training_utils.save_cfg_json(cfg=cfg, epoch=num, global_step=global_step)
+    training_utils.save_cfg_json(cfg=cfg, epoch=num_epochs, global_step=global_step)
     training_utils.save_checkpoint(model=model, optimizer=optimizer, cfg=cfg,
                     epoch=num_epochs, global_step=global_step)
     
