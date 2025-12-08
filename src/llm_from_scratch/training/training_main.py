@@ -34,7 +34,8 @@ def main():
     torch.manual_seed(cfg['seed'])
     print(model_cfg)
     # modify cfg
-    cfg["num_epochs"]=3
+    cfg["num_epochs"]=2
+    cfg["run_name"]="gpt2small_test_2epochs_initial"
     # setup model
     model = gpt2.setup_model(model_cfg)
     print(model)
@@ -53,19 +54,20 @@ def main():
         dataloader.loader_text_examine(test_loader,0,tokenizer)
     # training loop
     num_epochs = cfg['num_epochs']
+    optimizer=training_utils.setup_optimizer(model,cfg)
     train_losses, val_losses, tokens_seen, global_step = training_utils.train_model_simple(
     model=model, train_loader=train_loader, val_loader=val_loader, 
-    optimizer=training_utils.setup_optimizer(model,cfg),
+    optimizer=optimizer,
     device=cfg['device_name'],
     num_epochs = num_epochs, eval_freq=5, eval_iter=5,
     start_context = "Every effort moves you", tokenizer=tokenizer
     )
     # plot output
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
-    training_utils.plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
+    training_utils.plot_losses(cfg,epochs_tensor, tokens_seen, train_losses, val_losses)
     # save checkpoint
     training_utils.save_checkpoint(model=model, optimizer=optimizer, cfg=cfg,
-                    epoch=num_epochs-1, global_step=global_step)
+                    epoch=num_epochs, global_step=global_step)
     
 
 # %%

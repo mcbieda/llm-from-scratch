@@ -274,7 +274,14 @@ def setup_optimizer(model,cfg):
 # %%
 # PLOT LOSS
 
-def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
+def plot_losses(cfg,epochs_seen, tokens_seen, train_losses, val_losses):
+    # setup directory and filenm
+    epochnum = int(epochs_seen[-1]) # number of epochs
+    stepnum = len(tokens_seen)
+    run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
+    run_dir.mkdir(parents=True, exist_ok=True)
+    fullnm = run_dir / f"epoch{epochnum:03d}_step{stepnum:07d}_lossplot.png"
+    # plot
     fig, ax1 = plt.subplots(figsize=(5, 3))
     ax1.plot(epochs_seen, train_losses, label="Training loss")
     ax1.plot(
@@ -288,7 +295,9 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     ax2.plot(tokens_seen, train_losses, alpha=0)
     ax2.set_xlabel("Tokens seen")
     fig.tight_layout()
+    plt.savefig(fullnm)
     plt.show()
+    
 
 # ALSO INCLUDE IN training_run.py
 #epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
@@ -314,6 +323,7 @@ def save_checkpoint(model, optimizer, cfg, epoch, global_step):
         },
         ckpt_path,
     )
+    print(f"Saved checkpoint to {ckpt_path}")
     return ckpt_path
 
 # %%
