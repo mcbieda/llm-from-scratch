@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 from torch.utils.data import Dataset, DataLoader
+import json
 
 
 SRC_DIR = Path(__file__).resolve().parents[2]  # -> .../src
@@ -35,7 +36,7 @@ def main():
     print(model_cfg)
     # modify cfg
     cfg["num_epochs"]=2
-    cfg["run_name"]="gpt2small_test_2epochs_initial"
+    cfg["run_name"]="gpt2small_test_2epochs_2025DEC07"
     # setup model
     model = gpt2.setup_model(model_cfg)
     print(model)
@@ -66,6 +67,7 @@ def main():
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
     training_utils.plot_losses(cfg,epochs_tensor, tokens_seen, train_losses, val_losses)
     # save checkpoint
+    training_utils.save_cfg_json(cfg=cfg, epoch=num, global_step=global_step)
     training_utils.save_checkpoint(model=model, optimizer=optimizer, cfg=cfg,
                     epoch=num_epochs, global_step=global_step)
     

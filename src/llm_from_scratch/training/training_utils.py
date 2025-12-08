@@ -11,6 +11,8 @@ from pathlib import Path
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import json
+
 
 
 
@@ -306,7 +308,35 @@ def plot_losses(cfg,epochs_seen, tokens_seen, train_losses, val_losses):
 
 
 # %% 
-# save model
+# save config and model
+
+# save cfg only
+
+def save_cfg(cfg, epoch, global_step):
+    run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
+    run_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = run_dir / f"epoch{epoch:03d}_step{global_step:07d}_cfg.txt"
+    with open(cfg_path, "w") as f:
+        f.write(str(cfg))
+    print(f"Saved cfg to {cfg_path}")
+    return cfg_path 
+
+
+
+def save_cfg_json(cfg, epoch, global_step):
+    run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
+    run_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = run_dir / f"epoch{epoch:03d}_step{global_step:07d}_cfg.json"
+
+    # Make sure cfg only has JSON-serializable values (convert Paths etc. to str beforehand if needed)
+    with open(cfg_path, "w") as f:
+        json.dump(cfg, f, indent=2, sort_keys=True)
+
+    print(f"Saved cfg to {cfg_path}")
+    return cfg_path
+
+
+    
 
 def save_checkpoint(model, optimizer, cfg, epoch, global_step):
     run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
