@@ -254,11 +254,24 @@ class GPTModel(nn.Module):
         return logits
 
 # %%
+# explicit initialization to control std of values 
+def init_weights(module):
+    if isinstance(module, (nn.Linear, nn.Embedding)):
+        torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        if isinstance(module, nn.Linear) and module.bias is not None:
+            torch.nn.init.zeros_(module.bias)
+    elif isinstance(module, LayerNorm):
+        torch.nn.init.ones_(module.scale)
+        torch.nn.init.zeros_(module.shift)
+
+
+# %%
 # setup and main
 
 def setup_model(model_cfg):
     # model_cfg is the subset of RUN_CONFIG
     model = GPTModel(model_cfg)
+    model.apply(init_weights) # use the init weights function to control std
     # optional implement weight-tying, which was used by OPENAI
     if model_cfg["weight_tying"]:
         model.out_head.weight = model.tok_emb.weight
