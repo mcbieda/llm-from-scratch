@@ -39,6 +39,8 @@ Thumbs.db
 *.pickle
 *.pkl
 *.pdf
+*.tar.gz
+*.png
 
 # Output and Input folders
 # note added gpt2 folder to this

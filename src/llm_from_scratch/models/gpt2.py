@@ -229,9 +229,7 @@ class GPTModel(nn.Module):
         self.out_head = nn.Linear(
             cfg["emb_dim"], cfg["vocab_size"], bias=False
         )
-        # optional implement weight-tying, which was used by OPENAI
-        if cfg["weight_tying"]:
-            self.out_head.weight = self.tok_emb.weight
+        
 
     def forward(self, in_idx):
         # in_idx is input sentences in token number format
@@ -261,6 +259,9 @@ class GPTModel(nn.Module):
 def setup_model(model_cfg):
     # model_cfg is the subset of RUN_CONFIG
     model = GPTModel(model_cfg)
+    # optional implement weight-tying, which was used by OPENAI
+    if model_cfg["weight_tying"]:
+        model.out_head.weight = model.tok_emb.weight
     return model
 
 def main():
