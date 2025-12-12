@@ -664,7 +664,7 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
 # SETUP FOR TRAIN MODEL - from scratch
 
 
-
+IPEXflag = True
 torch.manual_seed(123)
 model=GPTModel(GPT_CONFIG_124M)
 model.to(device)

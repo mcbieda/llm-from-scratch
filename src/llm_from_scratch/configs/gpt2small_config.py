@@ -67,8 +67,8 @@ RUN_CONFIG = {
 
     "batch_size": 2,
     "lr": 4e-4,
-    "weight_decay": 0.15,
+    "weight_decay": 0.10,
     "num_epochs": 2,
-    "seed": 42,
+    "seed": 123,
     "output_dir": "/home/markb/llm-from-scratch/output",
 }
