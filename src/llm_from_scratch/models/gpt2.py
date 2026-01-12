@@ -271,7 +271,11 @@ def init_weights(module):
 def setup_model(model_cfg):
     # model_cfg is the subset of RUN_CONFIG
     model = GPTModel(model_cfg)
-    model.apply(init_weights) # use the init weights function to control std
+    # DEBUG: temp kill of this for consistency
+    #model.apply(init_weights) # use the init weights function to control std
+    # only adjust the tok_emb.weight initialization here
+    # with torch.no_grad():
+    #     torch.nn.init.normal_(model.tok_emb.weight, mean=0.0, std=0.02)
     # optional implement weight-tying, which was used by OPENAI
     if model_cfg["weight_tying"]:
         model.out_head.weight = model.tok_emb.weight
