@@ -157,8 +157,8 @@ def eval_before_training(model, train_loader, val_loader, device):
 
 # %%
 # functions: train model and evaluate model
-def train_model_simple(model, train_loader, val_loader, optimizer, device,
-                       num_epochs,eval_freq,eval_iter,start_context, tokenizer):
+def train_model_simple(model,cfg, train_loader, val_loader, optimizer, device,
+                       num_epochs,eval_freq,eval_iter,save_freq, start_context, tokenizer):
     train_losses,val_losses, track_tokens_seen = [],[],[]
     tokens_seen, global_step = 0, -1
 
@@ -184,9 +184,12 @@ def train_model_simple(model, train_loader, val_loader, optimizer, device,
                 print(f"Ep {epoch+1} (Step {global_step:06d}): "
                       f"Train loss {train_loss:.3f}, "
                       f"Val loss {val_loss:.3f}")
+                      
+            if global_step % save_freq == 0:
+                save_checkpoint(model, optimizer, cfg, epoch, global_step)
                 
         generate_and_print_sample(
-            model, tokenizer, device, start_context
+            model, cfg, tokenizer, device, start_context
         )
     return train_losses, val_losses, track_tokens_seen, global_step
 
@@ -203,11 +206,9 @@ def evaluate_model(model, train_loader, val_loader, device, eval_iter):
     model.train()
     return train_loss, val_loss
 
-def generate_and_print_sample(model, tokenizer, device, start_context):
+def generate_and_print_sample(model,cfg, tokenizer, device, start_context):
     model.eval()
-    #context_size=model.pos_embed.weight.shape[0]
-    # MB temp override, due to error
-    context_size = 256
+    context_size = cfg['model_config']['context_length']
     encoded = text_to_token_ids(start_context, tokenizer).to(device)
     with torch.no_grad():
         token_ids = generate_text_simple(
@@ -217,6 +218,36 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
     decoded_text = token_ids_to_text(token_ids, tokenizer)
     print(decoded_text.replace("\n", " "))
     model.train()
+    
+def eval_full_sets(model, train_loader, val_loader, device, do_train=True):
+    """
+    Evaluate loss over the FULL validation set (and optionally FULL train set).
+    Intended to run at the start and end of training.
+
+    Args:
+        model: your GPT model
+        train_loader: DataLoader for training set
+        val_loader: DataLoader for validation set
+        device: torch.device or string, e.g. "cuda" or "cpu"
+        do_train: if True, also compute full train loss (can be slow)
+
+    Returns:
+        (train_loss_or_None, val_loss)
+    """
+    model.eval()
+    with torch.no_grad():
+        train_loss = None
+        if do_train:
+            train_loss = calc_loss_loader(train_loader, model, device, num_batches=None)
+
+        val_loss = calc_loss_loader(val_loader, model, device, num_batches=None)
+
+    print("FULL train loss:" if do_train else "FULL train loss: (skipped)", train_loss)
+    print("FULL val loss:", val_loss)
+
+    model.train()
+    return train_loss, val_loss
+
 
 # %%
 # SETUP FOR TRAIN MODEL - from scratch
@@ -358,7 +389,10 @@ def save_results(cfg,train_losses, val_losses, tokens_seen, global_step):
 def save_checkpoint(model, optimizer, cfg, epoch, global_step):
     run_dir = Path(cfg["output_dir"]) / cfg["run_name"]
     run_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = run_dir / f"epoch{epoch:03d}_step{global_step:07d}.pth"
+    if cfg['save_overwrite']:
+        ckpt_path = run_dir / f"epoch_lastsave_step_lastsave.pth"
+    else:
+        ckpt_path = run_dir / f"epoch{epoch:03d}_step{global_step:07d}.pth"
 
     torch.save(
         {

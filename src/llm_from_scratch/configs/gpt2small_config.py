@@ -59,6 +59,7 @@ RUN_CONFIG = {
 
     "pretrained": False,
     "training_file": "/home/markb/llm-from-scratch/data/the-verdict.txt",
+    "start_context": "Every effort moves you",
     "val_file": "",
     "test_file": "",
     "val_ratio": 0.10,
@@ -70,5 +71,10 @@ RUN_CONFIG = {
     "weight_decay": 0.10,
     "num_epochs": 2,
     "seed": 123,
+    'eval_freq': 10,
+    'eval_iter': 5,
+    'save_freq': 200,
     "output_dir": "/home/markb/llm-from-scratch/output",
+    "save_overwrite": True
 }
+
