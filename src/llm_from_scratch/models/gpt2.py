@@ -137,7 +137,7 @@ class GELU(nn.Module):
 
     def forward(self, x):
         return 0.5 * x * (1 + torch.tanh(
-            torch.sqrt(torch.tensor(2.0 / torch.pi)) * 
+            torch.sqrt(torch.tensor(2.0 / torch.pi, device=x.device)) * 
             (x + 0.044715 * torch.pow(x, 3))
         ))
 
@@ -287,6 +287,10 @@ def main():
     model_cfg = cfg['model_config']
     print(model_cfg)
     model = setup_model(model_cfg)
+
+    device = torch.device(cfg['device_name'])
+    model.to(device)
+
     print(model)
     totparams = sum(p.numel() for p in model.parameters())
     print("Total number of parameters:", totparams)
@@ -298,8 +302,3 @@ if __name__ == "__main__":
     main()
 
     
-
-
-
-
-

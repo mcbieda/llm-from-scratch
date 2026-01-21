@@ -41,6 +41,8 @@ Thumbs.db
 *.pdf
 *.tar.gz
 *.png
+*.tar
+*.gz
 
 # Output and Input folders
 # note added gpt2 folder to this
@@ -50,3 +52,4 @@ Thumbs.db
 **/notrack/
 **/gpt2/
 **/gpt2_all/
+**/drive_upload_2026JAN12/

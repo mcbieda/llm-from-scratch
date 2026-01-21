@@ -42,6 +42,8 @@ def make_tokenized_batch(batch):
 def forward_model(model, batch):
     # model is usually from setup_model
     # batch is usually from make_tokenized_batch; stacked tensor of tokenized values
+    device = next(model.parameters()).device
+    batch = batch.to(device)
     model.eval()
     with torch.no_grad():
         res = model(batch)
@@ -400,6 +402,7 @@ def load_checkpoint(cfg, device, epoch=None, global_step=None):
     #   model = GPTModel(ckpt_cfg["model_config"])
     # If it takes individual kwargs, use:
     model = GPTModel(**ckpt_cfg["model_config"])
+    model.to(device)
 
     model.load_state_dict(checkpoint["model_state_dict"])
 

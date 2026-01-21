@@ -27,13 +27,13 @@ from llm_from_scratch.configs import gpt2small_config
 # %%
 # function make_tokenized_batch
 
-def make_tokenized_batch(batch):
+def make_tokenized_batch(batch, device="cpu"):
     # starting with list of sentences, returns tokenized list
     # batch is batch of sentences in text form dim: num of sentences
     tokenizer = tiktoken.get_encoding("gpt2")
     batchout = []
     for i in range(len(batch)):
-        batchout.append(torch.tensor(tokenizer.encode(batch[i])))
+        batchout.append(torch.tensor(tokenizer.encode(batch[i]), device=device))
     batchoutstack = torch.stack(batchout, dim=0)
     return batchoutstack
 
@@ -41,10 +41,10 @@ def make_tokenized_batch(batch):
 # %%
 # token untilities
 
-def text_to_token_ids(text, tokenizer):
+def text_to_token_ids(text, tokenizer, device="cpu"):
     # text must be a string
     encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
-    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+    encoded_tensor = torch.tensor(encoded, device=device).unsqueeze(0)
     return encoded_tensor
 
 def token_ids_to_text(token_ids, tokenizer):
