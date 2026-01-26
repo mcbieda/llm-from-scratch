@@ -20,13 +20,13 @@ urllib.request.urlretrieve(url, filename)
 #     "gpt2-large (774M)": {"emb_dim": 1280, "n_layers": 36, "n_heads": 20},
 #     "gpt2-xl (1558M)": {"emb_dim": 1600, "n_layers": 48, "n_heads": 25},
 # }
-model_size = "355M"
+model_size = "124M"
 
 
 # %%
 from gpt_download import download_and_load_gpt2
 settings, params = download_and_load_gpt2(
-    model_size=model_size, models_dir="gpt2_all"
+    model_size=model_size, models_dir="gpt2_all_2026"
 )
 # %%
 # PRINT settings and parameter keys
