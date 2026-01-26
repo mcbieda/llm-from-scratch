@@ -49,7 +49,7 @@ ABOUT*
 # Output and Input folders
 # note added gpt2 folder to this
 **/output/
-**/data/
+**/data-orig/
 **/results/
 **/notrack/
 **/gpt2/
