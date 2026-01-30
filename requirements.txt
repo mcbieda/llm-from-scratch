@@ -1,0 +1,17 @@
+
+
+# OPTIONAL - install only if working on intel CPU - this made maybe a tiny difference in my case
+# I did use this in some code, but strong recommend to just use google colab or similar resource and gpu
+# intel_extension_for_pytorch==2.7.0
+
+
+# --- Third-party (pip install) ---
+
+matplotlib==3.10.8
+numpy==2.4.1
+pandas==3.0.0
+requests==2.32.5
+tensorflow==2.19.0
+tiktoken==0.9.0
+torch==2.7.1
+tqdm==4.67.1
