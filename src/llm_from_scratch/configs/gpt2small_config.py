@@ -8,14 +8,15 @@ GPT_CONFIG_124M_OPENAI = {
     # OPENAI version if loadign openai weights
     # yields RASCHKA value of 163,009,536 if weight_tying is False
     # listed at 124M if weight_tying is True
-    "vocab_size": 50257,     # Vocabulary size
+    # this was adjusted by MB 2026JAN20
+    "vocab_size": 50257,     # Vocabulary size OpenAI value; use gpt2 from tiktoken package
     "context_length": 1024,  # Context length was 256; this is OpenAI value
-    "emb_dim": 768,          # Embedding dimension
+    "emb_dim": 768,          # Embedding dimension OpenAI value
     "n_heads": 12,           # Number of attention heads
     "n_layers": 12,          # Number of layers
-    "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": False,       # Query-Key-Value bias; False for GPT-2-small original
-    "weight_tying": True    # OPENAI default; I added this; Raschka has False
+    "drop_rate": 0.1,        # Dropout rate is zero for OpenAI; I use 0.1 for my training
+    "qkv_bias": True,       # Query-Key-Value bias; True for GPT-2-small original; I use False generally for my train from scratch
+    "weight_tying": True    # OPENAI has weight tying, but this is FALSE for my model as not implemented yet
 }
 
 GPT_CONFIG_124M_BETTERTRAIN = {
@@ -57,7 +58,8 @@ RUN_CONFIG = {
     "tokenizer": "gpt2",
 
 
-    "pretrained": False,
+    "load_pretrained_params": False,
+    "params_file": "/home/markb/llm-from-scratch/data/gpt2_params.pkl", 
     "training_file": "/home/markb/llm-from-scratch/data/the-verdict.txt",
     "start_context": "Every effort moves you",
     "val_file": "",

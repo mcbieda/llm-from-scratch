@@ -12,6 +12,7 @@ import torch
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import json
+import numpy as np
 
 
 
@@ -184,6 +185,9 @@ def train_model_simple(model,cfg, train_loader, val_loader, optimizer, device,
                 print(f"Ep {epoch+1} (Step {global_step:06d}): "
                       f"Train loss {train_loss:.3f}, "
                       f"Val loss {val_loss:.3f}")
+                generate_and_print_sample(
+                    model, cfg, tokenizer, device, start_context
+                    )
                       
             if global_step % save_freq == 0:
                 save_checkpoint(model, optimizer, cfg, epoch, global_step)
@@ -205,6 +209,12 @@ def evaluate_model(model, train_loader, val_loader, device, eval_iter):
         )
     model.train()
     return train_loss, val_loss
+
+def assign(left, right):
+    if left.shape != right.shape:
+        raise ValueError(f"Shape mismatch. Left: {left.shape}, Right: {right.shape}"
+        )
+    return torch.nn.Parameter(torch.tensor(right))
 
 def generate_and_print_sample(model,cfg, tokenizer, device, start_context):
     model.eval()
@@ -409,6 +419,69 @@ def save_checkpoint(model, optimizer, cfg, epoch, global_step):
 
 # %%
 # LOAD MODEL AND OPTIMIZER
+
+
+
+def load_weights_into_gpt(gpt, params):
+    gpt.pos_emb.weight = assign(gpt.pos_emb.weight, params['wpe'])
+    gpt.tok_emb.weight = assign(gpt.tok_emb.weight, params['wte'])
+
+    for b in range(len(params["blocks"])):
+        q_w, k_w, v_w = np.split(
+            (params["blocks"][b]["attn"]["c_attn"])["w"], 3, axis=-1)
+        gpt.trf_blocks[b].att.W_query.weight = assign(
+            gpt.trf_blocks[b].att.W_query.weight, q_w.T)
+        gpt.trf_blocks[b].att.W_key.weight = assign(
+            gpt.trf_blocks[b].att.W_key.weight, k_w.T)
+        gpt.trf_blocks[b].att.W_value.weight = assign(
+            gpt.trf_blocks[b].att.W_value.weight, v_w.T)
+
+        q_b, k_b, v_b = np.split(
+            (params["blocks"][b]["attn"]["c_attn"])["b"], 3, axis=-1)
+        gpt.trf_blocks[b].att.W_query.bias = assign(
+            gpt.trf_blocks[b].att.W_query.bias, q_b)
+        gpt.trf_blocks[b].att.W_key.bias = assign(
+            gpt.trf_blocks[b].att.W_key.bias, k_b)
+        gpt.trf_blocks[b].att.W_value.bias = assign(
+            gpt.trf_blocks[b].att.W_value.bias, v_b)
+
+        gpt.trf_blocks[b].att.out_proj.weight = assign(
+            gpt.trf_blocks[b].att.out_proj.weight, 
+            params["blocks"][b]["attn"]["c_proj"]["w"].T)
+        gpt.trf_blocks[b].att.out_proj.bias = assign(
+            gpt.trf_blocks[b].att.out_proj.bias, 
+            params["blocks"][b]["attn"]["c_proj"]["b"])
+
+        gpt.trf_blocks[b].ff.layers[0].weight = assign(
+            gpt.trf_blocks[b].ff.layers[0].weight, 
+            params["blocks"][b]["mlp"]["c_fc"]["w"].T)
+        gpt.trf_blocks[b].ff.layers[0].bias = assign(
+            gpt.trf_blocks[b].ff.layers[0].bias, 
+            params["blocks"][b]["mlp"]["c_fc"]["b"])
+        gpt.trf_blocks[b].ff.layers[2].weight = assign(
+            gpt.trf_blocks[b].ff.layers[2].weight, 
+            params["blocks"][b]["mlp"]["c_proj"]["w"].T)
+        gpt.trf_blocks[b].ff.layers[2].bias = assign(
+            gpt.trf_blocks[b].ff.layers[2].bias, 
+            params["blocks"][b]["mlp"]["c_proj"]["b"])
+
+        gpt.trf_blocks[b].norm1.scale = assign(
+            gpt.trf_blocks[b].norm1.scale, 
+            params["blocks"][b]["ln_1"]["g"])
+        gpt.trf_blocks[b].norm1.shift = assign(
+            gpt.trf_blocks[b].norm1.shift, 
+            params["blocks"][b]["ln_1"]["b"])
+        gpt.trf_blocks[b].norm2.scale = assign(
+            gpt.trf_blocks[b].norm2.scale, 
+            params["blocks"][b]["ln_2"]["g"])
+        gpt.trf_blocks[b].norm2.shift = assign(
+            gpt.trf_blocks[b].norm2.shift, 
+            params["blocks"][b]["ln_2"]["b"])
+
+    gpt.final_norm.scale = assign(gpt.final_norm.scale, params["g"])
+    gpt.final_norm.shift = assign(gpt.final_norm.shift, params["b"])
+    gpt.out_head.weight = assign(gpt.out_head.weight, params["wte"])
+
 
 
 def load_checkpoint(cfg, device, epoch=None, global_step=None):
