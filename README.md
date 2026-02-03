@@ -2,7 +2,7 @@
 Building an LLM from scratch with my own mods and experiments  
 
 ## IMPORTANT  
-**MUCH MORE TO COME! I will be uploading more interesting notebooks soon, final stages of polishing them**
+**MUCH MORE TO COME! I will be uploading more interesting notebooks soon, final stages of polishing them**  
 This was my learning project - I went through "Build an LLM from scratch" by Raschka page by page.   
 The great majority of the code here is from Raschka's book "Build an LLM from Scratch". Note that this code is the actual code from the published book; it is not the code from Raschka's github site.
 My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning.
