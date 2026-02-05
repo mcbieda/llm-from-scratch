@@ -1,5 +1,11 @@
 # llm-from-scratch
-Building an LLM from scratch with my own mods and experiments  
+Building an LLM from scratch (based on the Raschka book - see below) with my own mods and experiments  
+
+## tl;dr  
+A well-structured repo that will allow you to easily study, train, modify, and examine gpt-2 scale LLMs.  
+Based on "Build an LLM from Scratch" by Raschka but unlike his repo, divided into functional sections as opposed to chapters for learning.  
+Very easy to install under WSL2-Ubuntu or onto google drive for use with colaboratory.  
+Simple notebooks that run some basic experiments.  
 
 ## IMPORTANT  
 **MUCH MORE TO COME! I will be uploading more interesting notebooks soon, final stages of polishing them**  
