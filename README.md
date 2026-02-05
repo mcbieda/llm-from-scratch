@@ -11,17 +11,19 @@ Simple notebooks that run some basic experiments.
 **MUCH MORE TO COME! I will be uploading more interesting notebooks soon, final stages of polishing them**  
 This was my learning project - I went through "Build an LLM from scratch" by Raschka page by page.   
 The great majority of the code here is from Raschka's book "Build an LLM from Scratch". Note that this code is the actual code from the published book; it is not the code from Raschka's github site.
-My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning.
+My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning of repo structure, which is logical as opposed to Raschka's structure, which is aimed toward learning part by part.  
 
 ## HOW TO: QUICKLY SEE WHAT I HAVE DONE AND SOME RESULTS  
 1. The most obvious way: go to /notebooks in github, click on a notebook, and look at the writeup.  
-	a. the notebooks are fully run notebooks with the outputs  
+	a. the notebooks are fully executed notebooks with the outputs included    
 2. To look at my refactoring (which is less obvious)  
 	a. look at the notebooks in /notebooks  
 	b. look at the code in /src  
 	
 
 ## HOW IS THIS DIFFERENT FROM THE RASCHKA REPO?  
+I modified a fair number of things and supplied the notebooks to allow easy training, examination of code and logic, and modification.  
+As to repo - Raschka has his repo by chapter from his book. This is by logical role. So, in a sense, this is streamlined. 
 I refactored this myself into the modules in /src/llm_from_scratch. So these are my choices. Also, the notebook and the main function in the notebook (run_training()) is of my design. The setup of the configuration parameters is my design. This was/is a learning project for me, which explains the evolution from really hacky and chapter based code to the refactored version.  
 
 ## HOW TO: UNDERSTAND AND MODIFY THE MODEL/RUN CONFIGURATION  
