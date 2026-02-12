@@ -17,7 +17,7 @@ import tensorflow as tf
 #     "gpt2-xl (1558M)": {"emb_dim": 1600, "n_layers": 48, "n_heads": 25},
 # }
 model_size = "124M"
-models_dir = "gpt2_all_2026"
+models_dir = "gpt2_all_test"
 url = (
     "https://raw.githubusercontent.com/rasbt/"
     "LLMs-from-scratch/main/ch05/"
