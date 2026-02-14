@@ -75,7 +75,7 @@ RUN_CONFIG = {
     "seed": 123,
     'eval_freq': 10,
     'eval_iter': 5,
-    'save_freq': 200,
+    'save_freq': 200, # save_freq=0 means no saving at all
     "output_dir": "/home/markb/llm-from-scratch/output",
     "save_overwrite": True
 }

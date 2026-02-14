@@ -157,7 +157,7 @@ def eval_before_training(model, train_loader, val_loader, device):
 # !!!!!!!!!!!!
 
 # %%
-# functions: train model and evaluate model
+# functions: train_model_simple and evaluate model
 def train_model_simple(model,cfg, train_loader, val_loader, optimizer, device,
                        num_epochs,eval_freq,eval_iter,save_freq, start_context, tokenizer):
     train_losses,val_losses, track_tokens_seen = [],[],[]
@@ -188,13 +188,15 @@ def train_model_simple(model,cfg, train_loader, val_loader, optimizer, device,
                 generate_and_print_sample(
                     model, cfg, tokenizer, device, start_context
                     )
-                      
-            if global_step % save_freq == 0:
+            # note save_freq=0 means no saving ever          
+            if save_freq>0 and global_step % save_freq == 0:
                 save_checkpoint(model, optimizer, cfg, epoch, global_step)
-                
         generate_and_print_sample(
-            model, cfg, tokenizer, device, start_context
-        )
+            model, cfg, tokenizer, device, start_context)
+            
+    # save final model, optimizer, and info about the model
+    if save_freq>0:
+        save_checkpoint(model, optimizer, cfg, epoch, global_step)
     return train_losses, val_losses, track_tokens_seen, global_step
 
 
