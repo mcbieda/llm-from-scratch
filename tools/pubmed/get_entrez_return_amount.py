@@ -1,0 +1,16 @@
+# get_entrez_return_amount.py
+# Mark Bieda, based on chatGPT-o3
+# June 16, 2025
+
+from Bio import Entrez
+Entrez.email = "mark.extrastuff1@gmail.com"
+# Entrez.api_key = "YOUR_NCBI_API_KEY"      # optional
+
+# query = "oncology[mesh] AND 2008:2025[pdat] AND hasabstract[text]"
+#query = '(cancer[Title/Abstract] OR "breast neoplasms"[MeSH Terms]) AND (chromatin[Title/Abstract] OR epigenetics[Title/Abstract] OR histone[Title/Abstract] OR epigenetic[Title/Abstract] OR histones[Title/Abstract]) AND 2005:2025[dp] AND hasabstract[text]'
+# query = '(cancer[Title/Abstract]) AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract]) AND 2000:2004[dp] AND hasabstract[text]' - 3067 abstracts
+query = '(cancer[Title/Abstract]) AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract]) AND 2005:2025[dp] AND hasabstract[text]'
+
+handle = Entrez.esearch(db="pubmed", term=query, retmax=0)  # retmax=0 → count only
+result = Entrez.read(handle)
+print("Total abstracts:", result["Count"])
