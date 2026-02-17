@@ -198,6 +198,31 @@ def cosine_similarity_per_token(a: torch.Tensor, b: torch.Tensor) -> torch.Tenso
     return F.cosine_similarity(a, b, dim=1)
 
 
+def compute_cosine_similarity(t1: int, t2: int, embed_mat: torch.Tensor) -> float:
+    """Compute cosine similarity between two token embeddings by token id.
+
+    Args:
+        t1: First token id.
+        t2: Second token id.
+        embed_mat: Embedding matrix of shape [V, D].
+
+    Returns:
+        Cosine similarity as a Python float.
+    """
+    if embed_mat.ndim != 2:
+        raise ValueError(f"Expected embed_mat to be 2D [V, D]. Got {embed_mat.shape=}.")
+
+    vocab_size = int(embed_mat.shape[0])
+    if not (0 <= t1 < vocab_size and 0 <= t2 < vocab_size):
+        raise ValueError(
+            f"Token ids out of range for vocab size {vocab_size}: t1={t1}, t2={t2}."
+        )
+
+    emb1 = embed_mat[t1]
+    emb2 = embed_mat[t2]
+    return float(F.cosine_similarity(emb1.unsqueeze(0), emb2.unsqueeze(0), dim=1).item())
+
+
 def rank_tokens_by_cosine_similarity(
     cosine_scores: torch.Tensor,
     tokenizer,

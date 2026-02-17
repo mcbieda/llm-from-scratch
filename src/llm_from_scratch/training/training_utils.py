@@ -124,6 +124,20 @@ def token_ids_to_text(token_ids, tokenizer):
     return tokenizer.decode(flat.tolist())
 
 
+def generate_sample_text(model, prompt, context_size, tokenizer, max_new_tokens=50):
+    """Generate text continuation for a single prompt and return decoded text."""
+    device = next(model.parameters()).device
+    encoded = text_to_token_ids(prompt, tokenizer).to(device)
+    with torch.no_grad():
+        token_ids = generate_text_simple(
+            model=model,
+            idx=encoded,
+            max_new_tokens=max_new_tokens,
+            context_size=context_size,
+        )
+    return token_ids_to_text(token_ids, tokenizer).replace(chr(10), " ")
+
+
 
 
 
