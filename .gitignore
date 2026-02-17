@@ -44,6 +44,8 @@ Thumbs.db
 *.tar
 *.gz
 *.zip
+*.pth
+*Zone*
 ABOUT*
 
 # Output and Input folders

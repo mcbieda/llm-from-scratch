@@ -77,6 +77,37 @@ def generate_text_simple(model, idx,
     return idx
 
 
+def generate_next_token_probability(model, idx, context_size):
+    """Return next-token probabilities for a single sequence input."""
+    if idx.ndim == 1:
+        idx = idx.unsqueeze(0)
+    if idx.ndim != 2:
+        raise ValueError(f"`idx` must have shape (1, T) or (T,), got {tuple(idx.shape)}")
+    if idx.shape[0] != 1:
+        raise ValueError(f"`idx` must have batch size 1 for this helper, got {idx.shape[0]}")
+
+    device = next(model.parameters()).device
+    idx = idx.to(device)
+    idx_cond = idx[:, -context_size:]
+
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        logits = model(idx_cond)
+    if isinstance(logits, tuple):
+        logits = logits[0]
+    logits = logits[:, -1, :]
+    probas = torch.softmax(logits, dim=-1)
+    if was_training:
+        model.train()
+    return probas
+
+
+def generate_next_token_probabilities(model, idx, context_size):
+    # Backward-compatible alias.
+    return generate_next_token_probability(model, idx, context_size)
+
+
 
 # %%
 # token untilities

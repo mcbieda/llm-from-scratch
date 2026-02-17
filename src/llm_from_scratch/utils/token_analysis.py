@@ -44,10 +44,12 @@ Simple split word-frequency example:
 
 from collections import Counter
 import re
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Literal
 
 import pandas as pd
 import tiktoken
+import torch
+import torch.nn.functional as F
 
 # Callers can set this directly, e.g.:
 # tokenizer = tiktoken.get_encoding("gpt2")
@@ -172,6 +174,72 @@ def top_n_words_simple_split(text: str, n: int) -> pd.DataFrame:
                 "word": word,
                 "count": count,
                 "fraction_total": count / total_count,
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def cosine_similarity_per_token(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Compute one cosine similarity score per token row.
+
+    Args:
+        a: Tensor of shape [V, D].
+        b: Tensor of shape [V, D].
+
+    Returns:
+        Tensor of shape [V], where each value is cosine(a[i], b[i]).
+    """
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError(f"Expected 2D tensors [V, D]. Got {a.shape=} and {b.shape=}.")
+    if a.shape != b.shape:
+        raise ValueError(f"Shape mismatch: {a.shape=} vs {b.shape=}.")
+
+    return F.cosine_similarity(a, b, dim=1)
+
+
+def rank_tokens_by_cosine_similarity(
+    cosine_scores: torch.Tensor,
+    tokenizer,
+    k: int,
+    mode: Literal["most_similar", "most_dissimilar"] = "most_dissimilar",
+) -> pd.DataFrame:
+    """Return top-k tokens ranked by cosine similarity or dissimilarity.
+
+    Args:
+        cosine_scores: Tensor of shape [V], usually from cosine_similarity_per_token.
+        tokenizer: Tokenizer object with a decode(list[int]) -> str method.
+        k: Number of tokens to return.
+        mode: Ranking mode:
+            - "most_similar": largest cosine values.
+            - "most_dissimilar": smallest cosine values.
+
+    Returns:
+        DataFrame with columns: tokenid, token, cosine_similarity.
+    """
+    if cosine_scores.ndim != 1:
+        raise ValueError(f"Expected a 1D tensor [V]. Got {cosine_scores.shape=}.")
+    if k <= 0:
+        return pd.DataFrame(columns=["tokenid", "token", "cosine_similarity"])
+
+    num_tokens = int(cosine_scores.shape[0])
+    top_k = min(k, num_tokens)
+    largest = mode == "most_similar"
+    if mode not in {"most_similar", "most_dissimilar"}:
+        raise ValueError(
+            f"Invalid mode: {mode!r}. Use 'most_similar' or 'most_dissimilar'."
+        )
+
+    scores = cosine_scores.detach().cpu()
+    values, indices = torch.topk(scores, k=top_k, largest=largest)
+
+    rows = []
+    for tid, score in zip(indices.tolist(), values.tolist()):
+        rows.append(
+            {
+                "tokenid": tid,
+                "token": repr(tokenizer.decode([tid])),
+                "cosine_similarity": float(score),
             }
         )
 
