@@ -1,6 +1,8 @@
 # llm-from-scratch
 Building an LLM from scratch (based on the Raschka book - see below) with my own mods and experiments  
 
+## IMPORTANT NOTE: there have been major additions to the repo for domain-adaptive pretraining and also for bulk pubmed abstract download. There is current testing. The below instructions still hold but are don't cover these two topics. Testing and additions to the README will be added soon.  
+
 ## tl;dr  
 A well-structured repo that will allow you to easily study, train, modify, and examine gpt-2 scale LLMs.  
 Based on "Build an LLM from Scratch" by Raschka but unlike his repo, divided into functional sections as opposed to chapters for learning.  
