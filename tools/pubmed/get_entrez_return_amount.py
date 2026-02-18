@@ -1,9 +1,14 @@
-# get_entrez_return_amount.py
-# Mark Bieda, based on chatGPT-o3
-# June 16, 2025
+"""
+get_entrez_return_amount.py
+Mark Bieda, based on chatGPT-o3
+June 16, 2025
+
+Returns the number of abstracts for a given query. Edit the query etc here to get the numbers.
+Notes: have an Entrez account and use the entrez email for that account
+"""
 
 from Bio import Entrez
-Entrez.email = "mark.extrastuff1@gmail.com"
+Entrez.email = "" # MUST FILL IN
 # Entrez.api_key = "YOUR_NCBI_API_KEY"      # optional
 
 # query = "oncology[mesh] AND 2008:2025[pdat] AND hasabstract[text]"

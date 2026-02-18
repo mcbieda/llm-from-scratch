@@ -1,16 +1,25 @@
-# get_abstract_counts_by_year.py
-# Mark Bieda
-
-import csv
+from pathlib import Path
 import pandas as pd
 
 # %%
+# PATH SETUP
+def find_project_root(start: Path) -> Path:
+    """
+    Resolve repo root by walking upward until both `src/` and `notebooks/` exist.
+    """
+    for p in [start, *start.parents]:
+        if (p / "src").exists() and (p / "notebooks").exists():
+            return p
+    return start
+
+
+PROJECT_ROOT = find_project_root(Path(__file__).resolve())
+DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
 # PARAMS
-filepath = "/home/markb/bio-llm/tokenizer/"
 filenm = "pubmed_abstracts_2005to2025ONLY_ERBB2_ABSTRACTS_getv7_english_FULL.csv"
-fullnm_read = filepath + filenm
-output_filenm = "pubmed_abstracts_2005to2025ONLY_ERBB2_ABSTRACTS_getv7_english_counts_by_year.csv"
-output_fullnm = filepath + output_filenm
+fullnm_read = DATA_DIR / filenm
 
 # fraction for validate and test
 val_fraction = 0.02
@@ -57,13 +66,17 @@ print(f"Test rows: {len(df_test)}")
 # save to csv files
 base_name = filenm.replace("_FULL.csv", "")
 
-df_train.to_csv(f"{filepath}{base_name}_train.csv", index=False)
-df_val.to_csv(f"{filepath}{base_name}_val.csv", index=False)
-df_test.to_csv(f"{filepath}{base_name}_test.csv", index=False)
+train_csv = DATA_DIR / f"{base_name}_train.csv"
+val_csv = DATA_DIR / f"{base_name}_val.csv"
+test_csv = DATA_DIR / f"{base_name}_test.csv"
 
-print(f"Train data saved to {filepath}{base_name}_train.csv")
-print(f"Validation data saved to {filepath}{base_name}_val.csv")
-print(f"Test data saved to {filepath}{base_name}_test.csv")
+df_train.to_csv(train_csv, index=False)
+df_val.to_csv(val_csv, index=False)
+df_test.to_csv(test_csv, index=False)
+
+print(f"Train data saved to {train_csv}")
+print(f"Validation data saved to {val_csv}")
+print(f"Test data saved to {test_csv}")
 
 # %%
 # save only the last field from each df into a file for each set. This is a text file
@@ -74,12 +87,16 @@ def save_abstracts_to_txt(dataframe, output_path):
             #fh.write(abstract.replace("\n", " ").strip() + "\n")
             fh.write(abstract + "\n")
 
-save_abstracts_to_txt(df_train, f"{filepath}{base_name}_train_abstracts.txt")
-save_abstracts_to_txt(df_val, f"{filepath}{base_name}_val_abstracts.txt")
-save_abstracts_to_txt(df_test, f"{filepath}{base_name}_test_abstracts.txt")
+train_txt = DATA_DIR / f"{base_name}_train_abstracts.txt"
+val_txt = DATA_DIR / f"{base_name}_val_abstracts.txt"
+test_txt = DATA_DIR / f"{base_name}_test_abstracts.txt"
 
-print(f"Train abstracts saved to {filepath}{base_name}_train_abstracts.txt")
-print(f"Validation abstracts saved to {filepath}{base_name}_val_abstracts.txt")
-print(f"Test abstracts saved to {filepath}{base_name}_test_abstracts.txt")
+save_abstracts_to_txt(df_train, train_txt)
+save_abstracts_to_txt(df_val, val_txt)
+save_abstracts_to_txt(df_test, test_txt)
+
+print(f"Train abstracts saved to {train_txt}")
+print(f"Validation abstracts saved to {val_txt}")
+print(f"Test abstracts saved to {test_txt}")
 
 # %%
