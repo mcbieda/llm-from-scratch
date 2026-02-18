@@ -180,6 +180,55 @@ def top_n_words_simple_split(text: str, n: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def top_next_tokens(
+    model,
+    prompt: str,
+    context_size: int,
+    top_k: int = 30,
+) -> pd.DataFrame:
+    """Return top-k next-token probabilities for a prompt.
+
+    Columns:
+    - rank: 1-based rank by probability (descending)
+    - tokenid: token id
+    - token: repr(decoded token text)
+    - probability: next-token probability
+    """
+    if top_k <= 0:
+        return pd.DataFrame(columns=["rank", "tokenid", "token", "probability"])
+
+    idx = torch.tensor(encode(prompt), dtype=torch.long).unsqueeze(0)
+    device = next(model.parameters()).device
+    idx = idx.to(device)
+    idx_cond = idx[:, -context_size:]
+
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        logits = model(idx_cond)
+    if isinstance(logits, tuple):
+        logits = logits[0]
+    probas = torch.softmax(logits[:, -1, :], dim=-1).squeeze(0).detach().cpu()
+    if was_training:
+        model.train()
+
+    k = min(top_k, int(probas.numel()))
+    values, token_ids = torch.topk(probas, k=k, largest=True)
+
+    rows = []
+    for rank, (tid, p) in enumerate(zip(token_ids.tolist(), values.tolist()), start=1):
+        rows.append(
+            {
+                "rank": rank,
+                "tokenid": tid,
+                "token": repr(decode_id(tid)),
+                "probability": float(p),
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
 def cosine_similarity_per_token(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """Compute one cosine similarity score per token row.
 

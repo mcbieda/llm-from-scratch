@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
-get_pubmed_abstracts_v5.py
+get_pubmed_abstracts_v7.py
 Pulls any-size PubMed result set despite the 10 000-record limit
 by automatically slicing the date range and chunking the fetches.
+
+IMPORTANT: there will be a prompt for an API key. Make sure to have an NCBI account and an API key
+Note that search params etc are in main block
 """
 
 from __future__ import annotations
@@ -11,11 +14,12 @@ import csv
 import sys
 import time
 from datetime import date
+from pathlib import Path
 from typing import Dict, Generator, List, Sequence, Tuple
 
 from Bio import Entrez, Medline
 
-Entrez.email = "mark.extrastuff1@gmail.com"               # always set
+DEFAULT_ENTREZ_EMAIL = "" # fill this in later to make easier for getting records
 API_DELAY_NO_KEY  = 0.34                       # 3 req/s
 API_DELAY_WITH_KEY = 0.12                      # 10 req/s
 
@@ -24,6 +28,11 @@ API_DELAY_WITH_KEY = 0.12                      # 10 req/s
 #  1.  Runtime API-key prompt
 # ──────────────────────────────────────────────────────────────────────
 def prompt_api_key() -> Tuple[str, float]:
+    raw_email = input(f"Enter your NCBI email (blank for default: {DEFAULT_ENTREZ_EMAIL}): ").strip()
+    email = raw_email or DEFAULT_ENTREZ_EMAIL
+    Entrez.email = email
+    print(f"[INFO] Using email: {Entrez.email}")
+
     raw = input("Enter your NCBI API key (blank for none): ").strip()
     key = raw.strip("\"'").strip()
     if key:
@@ -129,6 +138,16 @@ def save_articles(arts: List[Dict[str, str]],
     print(f"[DONE] {len(arts):,} records saved → {csv_path}, {txt_path}")
 
 
+def find_project_root(start: Path) -> Path:
+    """
+    Resolve repo root by walking upward until both `src/` and `notebooks/` exist.
+    """
+    for p in [start, *start.parents]:
+        if (p / "src").exists() and (p / "notebooks").exists():
+            return p
+    return start
+
+
 # ──────────────────────────────────────────────────────────────────────
 # 4.  Main high-level driver
 # ──────────────────────────────────────────────────────────────────────
@@ -137,6 +156,14 @@ def download_formatted_pubmed_abstracts(base_query: str,
                                         year_end: int,
                                         fileroot: str = "pubmed",
                                         id_chunk: int = 1000) -> None:
+    project_root = find_project_root(Path(__file__).resolve())
+    data_dir = project_root / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    fileroot_path = Path(fileroot)
+    if fileroot_path.parent == Path("."):
+        fileroot = str(data_dir / fileroot_path.name)
+
     key, delay = prompt_api_key()
 
     all_articles: List[Dict[str, str]] = []
