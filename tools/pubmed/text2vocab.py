@@ -24,6 +24,8 @@ import string
 import collections as collec
 from collections import Counter
 import json
+import os
+from pathlib import Path
 
 # %%
 # FUNCTIONS
@@ -51,13 +53,51 @@ def tolower(x: list):
 # %%
 # initialize variables
 mydict = collec.defaultdict(int)
-outpath = "/home/markb/bio-llm/tokenizer/data/"
+
+def find_repo_root(start: Path) -> Path | None:
+    """
+    Resolve repo root by walking upward until both `src/` and `notebooks/` exist.
+    """
+    for p in [start, *start.parents]:
+        if (p / "src").exists() and (p / "notebooks").exists():
+            return p
+    return None
+
+
+def resolve_project_root() -> Path:
+    """
+    Match notebook-style path resolution:
+    1) LLM_PROJECT_ROOT env override
+    2) Colab drive default
+    3) Search upward from script location, then cwd
+    """
+    env_root = os.environ.get("LLM_PROJECT_ROOT", "").strip()
+    default_colab_root = Path("/content/drive/MyDrive/llm-from-scratch-drive")
+
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+    if default_colab_root.exists():
+        return default_colab_root.resolve()
+
+    search_starts = [Path(__file__).resolve(), Path.cwd().resolve()]
+    for start in search_starts:
+        root = find_repo_root(start)
+        if root is not None:
+            return root
+
+    # Final fallback if repository markers are unavailable.
+    return Path.cwd().resolve()
+
+
+PROJECT_ROOT = resolve_project_root()
+DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # %%
 filenm = "pubmed_abstracts_80K_getv5_english_ABSTRACTS.txt"
 # filenm = "testfile.txt"
-fullnm = outpath + filenm
+fullnm = DATA_DIR / filenm
 
 # %%
 # read file line by line and fill in frequency dictionary
@@ -121,21 +161,13 @@ list(mydict_sorted.keys())[0:n]
 # %%
 # output to json
 filenm = "pubmed_80Kv5_english_word2index.json"
-fullnm = outpath +filenm
+fullnm = DATA_DIR / filenm
 with open(fullnm,"w",encoding="utf-8") as f:
     json.dump(word_index,f, ensure_ascii=False)
     
 filenm = "pubmed_80Kv5_english_index2word.json"
-fullnm = outpath +filenm
+fullnm = DATA_DIR / filenm
 with open(fullnm,"w",encoding="utf-8") as f:
     json.dump(index_word,f, ensure_ascii=False)
 
 
-
-
-
-
-
-
-
-# %%
