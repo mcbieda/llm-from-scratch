@@ -19,7 +19,17 @@ from typing import Dict, Generator, List, Sequence, Tuple
 
 from Bio import Entrez, Medline
 
-DEFAULT_ENTREZ_EMAIL = "" # fill this in later to make easier for getting records
+# ──────────────────────────────────────────────────────────────────────
+#  0.  PARAMETER BLOCK - ADJUST THESE FOR YOUR QUERY AND LIMITS
+# ──────────────────────────────────────────────────────────────────────
+# BASE is the prompt for getting abstracts from pubmed  
+BASE = "(cancer[Title/Abstract]) AND english[lang] AND" \
+           "(ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])"
+#  set year range and the filename root for the resulting files
+year_start, year_end= 2024,2025
+thisfileroot="pubmed_abstracts_2024to2025ONLY_ERBB2_ABSTRACTS_getv7_english"
+# Some run params
+DEFAULT_ENTREZ_EMAIL = "" # fill this in  to make easier for getting records
 API_DELAY_NO_KEY  = 0.34                       # 3 req/s
 API_DELAY_WITH_KEY = 0.12                      # 10 req/s
 
@@ -196,10 +206,7 @@ def download_formatted_pubmed_abstracts(base_query: str,
 # ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     # PARAMS HERE
-    BASE = "(cancer[Title/Abstract]) AND english[lang] AND" \
-           "(ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])" 
-    year_start, year_end= 2005,2025
-    thisfileroot="pubmed_abstracts_2005to2025ONLY_ERBB2_ABSTRACTS_getv7_english"
+    
     # main function here
     download_formatted_pubmed_abstracts(BASE,
                                         year_start=year_start,

@@ -8,8 +8,10 @@ Notes: have an Entrez account and use the entrez email for that account
 """
 
 from Bio import Entrez
-Entrez.email = "" # MUST FILL IN
-# Entrez.api_key = "YOUR_NCBI_API_KEY"      # optional
+raw_email = input("Enter your NCBI account email): ").strip()
+Entrez.email = raw_email
+raw_api = input("Enter your NCBI account api key: ").strip()
+Entrez.api_key = raw_api
 
 # query = "oncology[mesh] AND 2008:2025[pdat] AND hasabstract[text]"
 #query = '(cancer[Title/Abstract] OR "breast neoplasms"[MeSH Terms]) AND (chromatin[Title/Abstract] OR epigenetics[Title/Abstract] OR histone[Title/Abstract] OR epigenetic[Title/Abstract] OR histones[Title/Abstract]) AND 2005:2025[dp] AND hasabstract[text]'

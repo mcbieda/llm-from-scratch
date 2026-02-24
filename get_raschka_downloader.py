@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import urllib.request
 import tensorflow as tf
 
@@ -92,6 +93,18 @@ with open(parameters_nm, "wb") as f:
 print("Pickle files written to:")
 print(f"  {os.path.abspath(settings_nm)}")
 print(f"  {os.path.abspath(parameters_nm)}")
+
+# Also copy generated pickle files to ./data next to this script.
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(script_dir, "data")
+os.makedirs(data_dir, exist_ok=True)
+settings_data_nm = os.path.join(data_dir, os.path.basename(settings_nm))
+parameters_data_nm = os.path.join(data_dir, os.path.basename(parameters_nm))
+shutil.copy2(settings_nm, settings_data_nm)
+shutil.copy2(parameters_nm, parameters_data_nm)
+print("Pickle files copied to:")
+print(f"  {settings_data_nm}")
+print(f"  {parameters_data_nm}")
 
 # %%
 # load of pickle files - general form
