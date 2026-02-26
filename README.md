@@ -1,32 +1,40 @@
 # llm-from-scratch
-Building an LLM from scratch (based on the Raschka book - see below) with my own mods and experiments  
+**Two parts:**
+1. Building an LLM from scratch (based on the Raschka book - see below) with my own mods and experiments  
+2. Experimenting with domain-adaptive pretraining using biomedical abstracts  
 
-## IMPORTANT NOTE: there have been major additions to the repo for domain-adaptive pretraining and also for bulk pubmed abstract download. There is current testing. The below instructions still hold but are don't cover these two topics. Testing and additions to the README will be added soon.  
 
 ## tl;dr  
-A well-structured repo that will allow you to easily study, train, modify, and examine gpt-2 scale LLMs.  
+**1. A well-structured repo that will allow you to easily study, train, modify, and examine gpt-2 scale LLMs.**   
 Based on "Build an LLM from Scratch" by Raschka but unlike his repo, divided into functional sections as opposed to chapters for learning.  
 Very easy to install under WSL2-Ubuntu or onto google drive for use with colaboratory.  
 Simple notebooks that run some basic experiments.  
+**2. Demonstration of domain-adaptive pretraining using the gpt2-small (124M) model.**
+Additional training was from a corpus of biomedical abstracts. 
 
-## IMPORTANT  
-**MUCH MORE TO COME! I will be uploading more interesting notebooks soon, final stages of polishing them**  
+## IMPORTANT    
 This was my learning project - I went through "Build an LLM from scratch" by Raschka page by page.   
 The great majority of the code here is from Raschka's book "Build an LLM from Scratch". Note that this code is the actual code from the published book; it is not the code from Raschka's github site.
-My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning of repo structure, which is logical as opposed to Raschka's structure, which is aimed toward learning part by part.  
+My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning of repo structure, which is logical as opposed to Raschka's structure, which is aimed toward learning part by part. The domain adaptive analysis parts were from my coding (w/LLM coding assistance).  
 
 ## HOW TO: QUICKLY SEE WHAT I HAVE DONE AND SOME RESULTS  
 1. The most obvious way: go to /notebooks in github, click on a notebook, and look at the writeup.  
-	a. the notebooks are fully executed notebooks with the outputs included    
+	a. the notebooks are fully executed notebooks with the outputs included  
+	b. see "gpt2_basic_training_small.ipynb" for simple training  
+	c. for DAPT and results, see "gpt2_basic_training_abstracts.ipynb" for training and "compare_base_vs_DAPT.ipynb" for some analysis  
 2. To look at my refactoring (which is less obvious)  
 	a. look at the notebooks in /notebooks  
-	b. look at the code in /src  
-	
-
+	b. look at the code in /src 
+  
 ## HOW IS THIS DIFFERENT FROM THE RASCHKA REPO?  
+**The biggest difference: I added the DAPT and analysis of results of DAPT.**  
 I modified a fair number of things and supplied the notebooks to allow easy training, examination of code and logic, and modification.  
 As to repo - Raschka has his repo by chapter from his book. This is by logical role. So, in a sense, this is streamlined. 
 I refactored this myself into the modules in /src/llm_from_scratch. So these are my choices. Also, the notebook and the main function in the notebook (run_training()) is of my design. The setup of the configuration parameters is my design. This was/is a learning project for me, which explains the evolution from really hacky and chapter based code to the refactored version.  
+
+## HOW CAN I DOWNLOAD PUBMED ABSTRACTS IN BULK (QUERY-BASED)?  
+see the code in /tools/pubmed and the README.md file there  
+
 
 ## HOW TO: UNDERSTAND AND MODIFY THE MODEL/RUN CONFIGURATION  
 OPTION 1:  
@@ -74,9 +82,6 @@ I have implemented and run code for chapter 6 and 7, but not adjusted for this r
 For #3, it is pretty simple to change the model to be like a larger model - just change a few parameters in the configuration file (specifically, parameters in cfg['model_config'] - and the differences are listed in the Raschka book). It is also quite easy to get the openai weights for the pretrained version of this model.
 For #4, I am currently interested in deterministic models to allow easy reproducibility and comparisons. Hence, no implementation.  
 
-## NEXT STEPS  
-1. **Pubmed abstract download and selection code at scale**: I have this code and will put it in a directory soon with some instructions. This is easy but there can be annoyances, which the code gets past.  
-2. **Notebook for continued pre-training of a openai-pretrained gpt2-small**. I have done this but want to refine the notebook a bit. A fun part of this is using weight-tying for some additional intepretability and a somewhat smaller model.
-   
+  
 
 
