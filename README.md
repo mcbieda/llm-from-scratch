@@ -12,6 +12,23 @@ Simple notebooks that run some basic experiments.
 **2. Demonstration of domain-adaptive pretraining using the gpt2-small (124M) model.**
 Additional training was from a corpus of biomedical abstracts. 
 
+## KEY OUTPUTS AND CONCLUSIONS FROM `compare_base_vs_dapt.ipynb`
+This notebook compares the base GPT-2 small OpenAI weights to a checkpoint after domain-adaptive pretraining (DAPT) on biomedical abstracts.
+
+Key outputs:
+1. **Token embedding changes were real but mostly modest.**
+   a. Across all 50,257 token embeddings, cosine similarity between base vs DAPT vectors had min/max/mean of about `0.884 / 0.999 / 0.971`.
+   b. Simple token-pair checks for biomedical terms such as `HER` + `2` showed only small changes at the embedding level (for example, roughly +1% for `' HER'` with `'2'`).
+2. **The largest behavioral differences showed up in next-token probabilities, not just in raw embedding similarity.**
+   a. For a simple control prompt like `dogs and`, the DAPT model started surfacing biomedical continuations such as `' breast'`, `' HER'`, `' EG'`, `' plasma'`, and `' patients'`.
+   b. For a normal pet-context prompt, the base and DAPT models still both strongly predicted `' cats'`, showing that general language ability and context sensitivity were preserved.
+3. **Biomedical prompts showed strong targeted shifts after DAPT.**
+   a. After `...treat HER`, the probability of token `'2'` increased sharply, from about `0.55` in the base model to about `0.96` in the DAPT model.
+   b. In prompts designed to produce `ERBB2`, the DAPT model strongly favored `'BB'` where the base model did not, indicating domain-specific knowledge had become much more available to the model during generation.
+
+Main conclusion:
+The notebook supports the idea that DAPT changed the model in a meaningful way for biomedical text. The changes are not mainly explained by large shifts in the token embedding layer alone. Instead, the stronger effect is in how the model reallocates next-token probabilities under biomedical context, which is exactly the behavior you would want from successful domain-adaptive pretraining.
+
 ## IMPORTANT    
 This was my learning project - I went through "Build an LLM from scratch" by Raschka page by page.   
 The great majority of the code here is from Raschka's book "Build an LLM from Scratch". Note that this code is the actual code from the published book; it is not the code from Raschka's github site.
@@ -83,5 +100,4 @@ For #3, it is pretty simple to change the model to be like a larger model - just
 For #4, I am currently interested in deterministic models to allow easy reproducibility and comparisons. Hence, no implementation.  
 
   
-
 

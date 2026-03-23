@@ -2,7 +2,7 @@
 
 Common usage:
     import tiktoken
-    from utils import token_analysis as ta
+    from llm_from_scratch.analysis import token_analysis as ta
 
     ta.tokenizer = tiktoken.get_encoding("gpt2")
     with open("data/corpus.txt", "r", encoding="utf-8") as f:
@@ -15,7 +15,7 @@ Common usage:
 
 Large-file streaming example:
     import tiktoken
-    from utils import token_analysis as ta
+    from llm_from_scratch.analysis import token_analysis as ta
 
     ta.tokenizer = tiktoken.get_encoding("gpt2")
 
@@ -27,7 +27,7 @@ Large-file streaming example:
 
 Word-like unit example:
     import tiktoken
-    from utils import token_analysis as ta
+    from llm_from_scratch.analysis import token_analysis as ta
 
     ta.tokenizer = tiktoken.get_encoding("gpt2")
     text = "Hello world! This is a test."
@@ -35,7 +35,7 @@ Word-like unit example:
     # Example output shape: ["Hello", "world!", "This", "is", "a", "test."]
 
 Simple split word-frequency example:
-    from utils import token_analysis as ta
+    from llm_from_scratch.analysis import token_analysis as ta
 
     text = "Hello, world. Hello: test; world hello"
     top_df = ta.top_n_words_simple_split(text, n=3)
@@ -64,7 +64,7 @@ def _get_tokenizer():
         tokenizer = tiktoken.get_encoding("gpt2")
     except Exception as exc:
         raise RuntimeError(
-            "No tokenizer available. Set utils.token_analysis.tokenizer "
+            "No tokenizer available. Set analysis.token_analysis.tokenizer "
             "to your tiktoken GPT-2 encoding object."
         ) from exc
     return tokenizer
@@ -180,6 +180,70 @@ def top_n_words_simple_split(text: str, n: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _next_token_probabilities(
+    model,
+    prompt: str,
+    context_size: int,
+) -> torch.Tensor:
+    """Return the next-token probability distribution for a prompt."""
+    idx = torch.tensor(encode(prompt), dtype=torch.long).unsqueeze(0)
+    device = next(model.parameters()).device
+    idx = idx.to(device)
+    idx_cond = idx[:, -context_size:]
+
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        logits = model(idx_cond)
+    if isinstance(logits, tuple):
+        logits = logits[0]
+    probas = torch.softmax(logits[:, -1, :], dim=-1).squeeze(0).detach().cpu()
+    if was_training:
+        model.train()
+
+    return probas
+
+
+def next_token_probability(
+    model,
+    prompt: str,
+    token: int | str,
+    context_size: int,
+) -> float:
+    """Return the probability of one specific next token after a prompt.
+
+    Args:
+        model: Language model that returns logits over the vocabulary.
+        prompt: Prompt text used as model context.
+        token: Target next token, as either a token id or a token string.
+            If a string is provided, it must encode to exactly one token.
+        context_size: Maximum context window to feed to the model.
+
+    Returns:
+        Probability of the requested token as a Python float.
+    """
+    if isinstance(token, str):
+        token_ids = encode(token)
+        if len(token_ids) != 1:
+            raise ValueError(
+                "token must encode to exactly one token when passed as a string. "
+                f"Got {len(token_ids)} tokens for {token!r}: {token_ids}"
+            )
+        token_id = token_ids[0]
+    else:
+        token_id = int(token)
+
+    probas = _next_token_probabilities(model, prompt, context_size)
+
+    vocab_size = int(probas.numel())
+    if not (0 <= token_id < vocab_size):
+        raise ValueError(
+            f"Token id out of range for vocab size {vocab_size}: token_id={token_id}."
+        )
+
+    return float(probas[token_id].item())
+
+
 def top_next_tokens(
     model,
     prompt: str,
@@ -197,20 +261,7 @@ def top_next_tokens(
     if top_k <= 0:
         return pd.DataFrame(columns=["rank", "tokenid", "token", "probability"])
 
-    idx = torch.tensor(encode(prompt), dtype=torch.long).unsqueeze(0)
-    device = next(model.parameters()).device
-    idx = idx.to(device)
-    idx_cond = idx[:, -context_size:]
-
-    was_training = model.training
-    model.eval()
-    with torch.no_grad():
-        logits = model(idx_cond)
-    if isinstance(logits, tuple):
-        logits = logits[0]
-    probas = torch.softmax(logits[:, -1, :], dim=-1).squeeze(0).detach().cpu()
-    if was_training:
-        model.train()
+    probas = _next_token_probabilities(model, prompt, context_size)
 
     k = min(top_k, int(probas.numel()))
     values, token_ids = torch.topk(probas, k=k, largest=True)

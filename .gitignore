@@ -27,6 +27,9 @@ Thumbs.db
 *.sqlite
 *.db
 
+# Local README drafts
+README_*
+
 # Output files
 *.csv
 *.tsv
@@ -60,3 +63,4 @@ ABOUT*
 **/drive_upload_2026JAN12/
 **/archived/
 **/gpt2_all_2026/
+src/llm_from_scratch/temp/
