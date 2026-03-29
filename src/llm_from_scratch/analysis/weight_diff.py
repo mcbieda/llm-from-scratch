@@ -41,7 +41,12 @@ def get_state_dict(model):
     return model.state_dict()
 
 
-def compare_models(base_model, dapt_model, ignore_tied_out_head=True):
+def compare_models(
+    base_model,
+    dapt_model,
+    ignore_tied_out_head=True,
+    max_changed_tensors=None,
+):
     base_sd = get_state_dict(base_model)
     dapt_sd = get_state_dict(dapt_model)
 
@@ -66,11 +71,20 @@ def compare_models(base_model, dapt_model, ignore_tied_out_head=True):
         rows.append(stats)
 
     df = pd.DataFrame(rows)
-    return df[[
+    df = df[[
         "name", "numel", "rel_l2", "delta_norm",
         "mean_abs_delta", "max_abs_delta",
         "cosine_similarity", "base_norm", "dapt_norm"
     ]].sort_values("rel_l2", ascending=False).reset_index(drop=True)
+
+    if max_changed_tensors is not None:
+        if max_changed_tensors < 0:
+            raise ValueError(
+                f"max_changed_tensors must be non-negative or None, got {max_changed_tensors}"
+            )
+        df = df.head(max_changed_tensors).reset_index(drop=True)
+
+    return df
 
 
 def _block_name_from_param_name(param_name):
