@@ -83,16 +83,16 @@ The largest individual tensor changes were:
 | `trf_blocks.9.norm2.shift` | 0.1343 |
 | `trf_blocks.0.att.W_value.weight` | 0.1328 |
 
-At the block level, the embedding tables are the most changed components:
+Using the notebook's `Changed blocks (simple summary)` output, the embedding tables are still the most changed components, followed by blocks 0 and 11 and then a fairly broad spread across the rest of the transformer stack:
 
-| Block | Aggregated relative L2 |
-| --- | ---: |
-| `tok_emb` | 0.2391 |
-| `pos_emb` | 0.0794 |
-| `trf_blocks.5` | 0.0768 |
-| `trf_blocks.6` | 0.0754 |
-| `trf_blocks.7` | 0.0752 |
-| `trf_blocks.3` | 0.0736 |
+| Block | Mean relative L2 | Max relative L2 |
+| --- | ---: | ---: |
+| `tok_emb` | 0.2391 | 0.2391 |
+| `pos_emb` | 0.0794 | 0.0794 |
+| `trf_blocks.0` | 0.0693 | 0.2429 |
+| `trf_blocks.11` | 0.0686 | 0.2410 |
+| `trf_blocks.5` | 0.0657 | 0.1245 |
+| `trf_blocks.2` | 0.0632 | 0.1333 |
 
 At the submodule level, the largest changes are concentrated in:
 
@@ -193,25 +193,25 @@ Lowest cosine tokens from the notebook:
 | 9 | `' Chris'` | 0.900631 |
 | 10 | `'You'` | 0.900823 |
 
-### A3. Block-level aggregated relative L2
+### A3. Changed blocks (simple summary)
 
-| Block | Relative L2 |
-| --- | ---: |
-| `tok_emb` | 0.239078 |
-| `pos_emb` | 0.079373 |
-| `trf_blocks.5` | 0.076822 |
-| `trf_blocks.6` | 0.075370 |
-| `trf_blocks.7` | 0.075207 |
-| `trf_blocks.3` | 0.073564 |
-| `trf_blocks.4` | 0.073233 |
-| `trf_blocks.8` | 0.073012 |
-| `trf_blocks.9` | 0.070998 |
-| `trf_blocks.2` | 0.069116 |
-| `final_norm` | 0.034897 |
-| `trf_blocks.10` | 0.033256 |
-| `trf_blocks.11` | 0.033155 |
-| `trf_blocks.0` | 0.029532 |
-| `trf_blocks.1` | 0.027977 |
+| Block | Mean relative L2 | Max relative L2 | Mean cosine similarity |
+| --- | ---: | ---: | ---: |
+| `tok_emb` | 0.239102 | 0.239102 | 0.976101 |
+| `pos_emb` | 0.079381 | 0.079381 | 0.997290 |
+| `trf_blocks.0` | 0.069316 | 0.242853 | 0.996674 |
+| `trf_blocks.11` | 0.068649 | 0.241008 | 0.996605 |
+| `trf_blocks.5` | 0.065701 | 0.124532 | 0.997838 |
+| `trf_blocks.2` | 0.063246 | 0.133276 | 0.997986 |
+| `trf_blocks.9` | 0.062557 | 0.134301 | 0.998021 |
+| `trf_blocks.6` | 0.062055 | 0.131899 | 0.998078 |
+| `trf_blocks.7` | 0.060903 | 0.111660 | 0.998237 |
+| `trf_blocks.10` | 0.060601 | 0.160957 | 0.997926 |
+| `trf_blocks.8` | 0.060534 | 0.109388 | 0.998276 |
+| `trf_blocks.3` | 0.060469 | 0.103831 | 0.998220 |
+| `trf_blocks.4` | 0.060012 | 0.134788 | 0.998114 |
+| `trf_blocks.1` | 0.059228 | 0.110822 | 0.998295 |
+| `final_norm` | 0.039702 | 0.044994 | 0.999887 |
 
 ### A4. Submodule summary
 
