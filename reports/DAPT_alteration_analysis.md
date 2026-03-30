@@ -2,9 +2,9 @@
 
 ## Summary
 
-This report summarizes the executed analyses in [compare_base_vs_dapt.ipynb](/home/markb/cloned-llm-2026MAR16/llm-from-scratch/notebooks/compare_base_vs_dapt.ipynb). The main finding is that domain-adaptive pretraining (DAPT) materially changed model behavior, but the change is not well explained by a simple "biomedical tokens became closer in embedding space" story.
+This report summarizes the executed analyses in [compare_base_vs_dapt.ipynb](/home/markb/cloned-llm-2026MAR16/llm-from-scratch/notebooks/compare_base_vs_dapt.ipynb). The main finding is that domain-adaptive pretraining (DAPT) materially changed model behavior, but the change is based on widespread changes in the model. Although the token embedding layer (which was weight tyed to the output layer) showed the largest changes between base and dapt models, simple transplantation of this layer from dapt to base did not lead to dapt behavior.
 
-The strongest evidence comes from three places. First, prompt-level next-token behavior shifts sharply in biomedical contexts, especially for ERBB2-related completions. Second, the largest parameter changes include the token embedding matrix, some layer-norm shift vectors, and attention value/output weights. Third, weight-transplantation experiments show that swapping embeddings alone is not sufficient and can even hurt validation loss, while keeping the DAPT transformer stack and replacing only the embeddings with base embeddings retains much of the DAPT gain.
+Overall, the strongest evidence comes from three places. First, prompt-level next-token behavior shifts sharply in biomedical contexts, especially for ERBB2-related completions. Second, the largest parameter changes include the token embedding matrix, some layer-norm shift vectors, and attention value/output weights. Third, weight-transplantation experiments show that swapping the base embedding layer into the DAPT model (DAPT model + base embedding) nearly removes the DAPT advantage for the validation set, but swapping the DAPT embedding layer into the base model (base + DAPT embedding) does not produce the DAPT loss advantage, but instead produces a much worse model than the base model. However, a hybrid model with more swaps (base model + DAPT embedding + DAPT positional encoding + DAPT transformer first block + DAPT transformer last block) does lead to slight improvement of base model loss (on the validation subset) and a great increment over the simple embedding swap (base + DAPT embedding). Hence, there is support for distributed changes in the DAPT model that are critical for the DAPT model advantage for validation subset loss.
 
 ## Experimental Setup
 
@@ -51,7 +51,7 @@ Across the full vocabulary, token embeddings remained broadly similar but not id
 - Mean cosine similarity: `0.9707`
 - Max cosine similarity: `0.9995`
 
-The most changed tokens were not obviously biomedical. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' Matt'`, `' Get'`, `' putting'`, `' Make'`, and `' police'`. That weakens any claim that DAPT primarily rewired only a small set of biomedical token embeddings.
+The most changed tokens were not clear biomedical tokens or clearly related to the DAPT training set. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' Matt'`, `' Get'`, `' putting'`, `' Make'`, and `' police'`. That weakens any claim that DAPT primarily rewired only a small set of biomedical token embeddings.
 
 ### Prompt-based behavior changes
 
@@ -109,14 +109,14 @@ This points to a broader redistribution of model behavior across embeddings, nor
 The notebook evaluates several hybrid models:
 
 - `base_encode_dapt_model`: base model with only DAPT token embeddings.
-- `base_encode_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts.
-- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11.
-- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6.
+- `base_encode_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
+- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the block analysis.
+- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of changes.
 - `dapt_encode_base_model`: DAPT model with token embeddings replaced by base embeddings.
 
 Validation losses on the sampled biomedical validation set:
 
-| Model | Full validation loss |
+| Model | Subset validation loss |
 | --- | ---: |
 | `dapt_model` | 2.5963 |
 | `base_encode_pos_trf0_11_model` | 2.8796 |
@@ -128,9 +128,10 @@ Validation losses on the sampled biomedical validation set:
 
 These hybrids support three conclusions:
 
-1. DAPT embeddings alone are not sufficient. Replacing only the base token embeddings with DAPT embeddings makes validation loss worse than the original base model.
-2. DAPT embeddings are not strictly necessary for much of the gain. When the DAPT model keeps its internal layers but receives base embeddings (`dapt_encode_base_model`), it still outperforms the base model.
-3. Some localized transplants help, but only partially. Replacing token and positional embeddings plus blocks 0 and 11 improves over the base model, but it still does not match the full DAPT checkpoint.
+1. To begin, DAPT did lead to a decrease in the subset validation loss, as expected and seen in prompt completions above. 
+2. DAPT embeddings appear necessary, but not sufficient, for the loss improvement. The (DAPT + base embeddings) model shows almost total loss of the DAPT advantage while (base + DAPT embeddings) makes validation loss worse than the original base model and much worse than the DAPT model.
+3. All the base model hybrids had worse loss than the base model, except for the (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block), which showed a marginal improvement over the base model. This supports coordinated changes are necessary for the DAPT advantage.
+3. Our block analysis may point toward more important blocks for DAPT loss advantage, and this makes sense with simple logic of LLM action. The (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block) is much better than (base + DAPT embeddings + DAPT positional encoding + DAPT block 5 + DAPT block 6). This is consistent with the first and last tranformer blocks playing a key role in dealing with the altered DAPT embedding.
 
 The prompt-based `BB` probability results are consistent with this pattern:
 
