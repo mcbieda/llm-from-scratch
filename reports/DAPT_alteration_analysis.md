@@ -115,23 +115,23 @@ This points to a broader redistribution of model behavior across embeddings, nor
 
 The notebook evaluates several hybrid models:
 
-- `base_encode_dapt_model`: base model with only DAPT token embeddings.
-- `base_encode_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
-- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the altered block analysis.
-- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of altered blocks.
-- `dapt_encode_base_model`: DAPT model with token embeddings replaced by base embeddings.
+- `base_embed_dapt_model`: base model with only DAPT token embeddings.
+- `base_embed_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
+- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the altered block analysis.
+- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of altered blocks.
+- `dapt_embed_base_model`: DAPT model with token embeddings replaced by base embeddings.
 
 Validation losses on the sampled biomedical validation set:
 
 | Model | Subset validation loss |
 | --- | ---: |
 | `dapt_model` | 2.5963 |
-| `base_encode_pos_trf0_11_model` | 2.8796 |
-| `dapt_encode_base_model` | 2.9055 |
+| `base_embed_pos_trf0_11_model` | 2.8796 |
+| `dapt_embed_base_model` | 2.9055 |
 | `base_model` | 2.9581 |
-| `base_encode_pos_trf5_6_model` | 3.1716 |
-| `base_encode_plusothers_dapt_model` | 3.2686 |
-| `base_encode_dapt_model` | 3.3036 |
+| `base_embed_pos_trf5_6_model` | 3.1716 |
+| `base_embed_plusothers_dapt_model` | 3.2686 |
+| `base_embed_dapt_model` | 3.3036 |
 
 These hybrids support three conclusions:
 
@@ -145,8 +145,8 @@ The prompt-based `BB` probability results are consistent with this pattern:
 | Model | `P('BB' | biomedical ER context)` |
 | --- | ---: |
 | `base_model` | 0.000555 |
-| `base_encode_plusothers_dapt_model` | 0.008450 |
-| `dapt_encode_base_model` | 0.154248 |
+| `base_embed_plusothers_dapt_model` | 0.008450 |
+| `dapt_embed_base_model` | 0.154248 |
 | `dapt_model` | 0.569766 |
 
 So the strongest ERBB2 behavior depends mainly on the broader DAPT transformer state, not on token embeddings alone.
@@ -245,5 +245,5 @@ Highest cosine similarity tokens from the notebook:
 
 - The notebook's embedding analyses and prompt analyses should not be read as equivalent evidence. The prompt analyses are much more informative about actual model behavior.
 - Because GPT-2 ties the token embedding and output head weights, token-embedding changes also directly affect the output distribution, but the transplantation experiments show that this direct effect is still not enough to explain the full DAPT improvement.
-- The best-performing hybrid in the notebook is `base_encode_pos_trf0_11_model`, which suggests that some targeted block swaps can recover part of the domain gain, but the result is still clearly inferior to the full DAPT checkpoint.
-- The poor performance of `base_encode_dapt_model` is a useful negative result: a transplanted embedding table can be mismatched to the rest of the base network.
+- The best-performing hybrid in the notebook is `base_embed_pos_trf0_11_model`, which suggests that some targeted block swaps can recover part of the domain gain, but the result is still clearly inferior to the full DAPT checkpoint.
+- The poor performance of `base_embed_dapt_model` is a useful negative result: a transplanted embedding table can be mismatched to the rest of the base network.

@@ -71,21 +71,21 @@ Selected outputs from the comparison:
 
 Key hybrid-model result:
 
-- `base_encode_dapt_model`: base model with DAPT token embeddings replacing base embeddings.
-- `base_encode_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts.
-- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full first and last transformer blocks.
-- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full tranformer blocks 5 and 6.
-- `dapt_encode_base_model`: DAPT model with token embeddings replaced by base embeddings.
+- `base_embed_dapt_model`: base model with DAPT token embeddings replacing base embeddings.
+- `base_embed_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts.
+- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full first and last transformer blocks.
+- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full tranformer blocks 5 and 6.
+- `dapt_embed_base_model`: DAPT model with token embeddings replaced by base embeddings.
 
 | Model | Subset validation loss |
 | --- | ---: |
 | `dapt_model` | 2.5963 |
-| `base_encode_pos_trf0_11_model` | 2.8796 |
-| `dapt_encode_base_model` | 2.9055 |
+| `base_embed_pos_trf0_11_model` | 2.8796 |
+| `dapt_embed_base_model` | 2.9055 |
 | `base_model` | 2.9581 |
-| `base_encode_pos_trf5_6_model` | 3.1716 |
-| `base_encode_plusothers_dapt_model` | 3.2686 |
-| `base_encode_dapt_model` | 3.3036 |
+| `base_embed_pos_trf5_6_model` | 3.1716 |
+| `base_embed_plusothers_dapt_model` | 3.2686 |
+| `base_embed_dapt_model` | 3.3036 |
 
 Interpretation:
 
