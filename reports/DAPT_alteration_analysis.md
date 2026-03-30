@@ -34,22 +34,28 @@ The notebook also constructs several hybrid models by transplanting selected DAP
 
 ### Embedding comparisons
 
-Small hand-picked token-pair tests showed only modest changes. Examples:
+Across all `50,257` token embeddings, cosine similarity between the base and DAPT embedding vectors was:
 
-| Token pair | Base cosine | DAPT cosine | Ratio |
-| --- | ---: | ---: | ---: |
-| `' HER'` vs `'2'` | 0.2598 | 0.2633 | 1.0136 |
-| `'HER'` vs `' 2'` | 0.1710 | 0.1790 | 1.0464 |
-| `' EG'` vs `'FR'` | 0.2568 | 0.2503 | 0.9750 |
-| `' ER'` vs `'BB'` | 0.2552 | 0.2603 | 1.0196 |
-| `' cat'` vs `' dog'` | 0.5498 | 0.5353 | 0.9737 |
+| Metric | Cosine similarity |
+| --- | ---: |
+| Min | 0.8841 |
+| Mean | 0.9707 |
+| Max | 0.9995 |
 
-Across the full vocabulary, token embeddings remained broadly similar but not identical:
+This suggests that token embedding changes were real but generally modest at the global level.
 
-- Vocabulary size evaluated: `50,257`
-- Min cosine similarity: `0.8841`
-- Mean cosine similarity: `0.9707`
-- Max cosine similarity: `0.9995`
+Small hand-picked token-pair tests also showed only modest changes:
+
+| Pair group | Token pair | Base cosine | DAPT cosine | Ratio |
+| --- | --- | ---: | ---: | ---: |
+| Biomedical-related | `' ER'` vs `'BB'` | 0.2552 | 0.2603 | 1.0196 |
+| Biomedical-related | `' HER'` vs `'2'` | 0.2598 | 0.2633 | 1.0136 |
+| Biomedical-related | `' kin'` vs `'ase'` | 0.2703 | 0.2712 | 1.0034 |
+| Biomedical-related | `' EG'` vs `'FR'` | 0.2568 | 0.2503 | 0.9750 |
+| Comparator | `'HER'` vs `' 2'` | 0.1710 | 0.1790 | 1.0464 |
+| Comparator | `'EG'` vs `' FR'` | 0.2667 | 0.2376 | 0.8912 |
+| Comparator | `'BB'` vs `'2'` | 0.2752 | 0.2726 | 0.9905 |
+| Comparator | `' cat'` vs `' dog'` | 0.5498 | 0.5353 | 0.9737 |
 
 The most changed tokens were not clear biomedical tokens or clearly related to the DAPT training set. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' Matt'`, `' Get'`, `' putting'`, `' Make'`, and `' police'`. That weakens any claim that DAPT primarily rewired only a small set of biomedical token embeddings.
 
@@ -59,11 +65,12 @@ Prompt behavior changed much more dramatically than the token-pair embedding che
 
 Selected examples:
 
-| Prompt | Metric | Base | DAPT |
-| --- | --- | ---: | ---: |
-| `For breast cancer ... treat HER` | `P('2')` top token | 0.5513 | 0.9640 |
-| `... copy number increases in ER` | `P('BB')` | 0.000555 | 0.569766 |
-| `doctor in the ER` | `P('BB')` appears in top-10? | No | Yes, 0.0401 |
+| Prompt / context | Expected token / continuation | Base model | DAPT model | Interpretation |
+| --- | --- | ---: | ---: | --- |
+| Cancer context ending with `HER` | `'2'` | 55.1% | 96.4% | Base model was already correct, but DAPT sharply strengthens the biomedical completion. |
+| Cancer context ending with `ER` and intended to continue toward `ERBB2` | `'BB'` | 0.1% | 57.0% | DAPT strongly shifts the continuation toward biomedical terminology. |
+| Emergency-room context ending with `ER` | Several possible continuations | top: `.` (31.7%) | top: `,` (23.1%) | DAPT changes ranking, but context still prevents the model from strongly collapsing onto `ERBB2`. |
+| Ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 72.3% | General language behavior remains substantially intact despite biomedical drift. |
 
 The ERBB2-style prompt is the clearest qualitative result. In the colorectal-cancer context ending in `ER`, the base model assigns negligible probability to `BB`, while the DAPT model makes `BB` the top next token at about 57.0%. This is a large functional shift, not a minor ranking perturbation.
 
@@ -110,8 +117,8 @@ The notebook evaluates several hybrid models:
 
 - `base_encode_dapt_model`: base model with only DAPT token embeddings.
 - `base_encode_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
-- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the block analysis.
-- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of changes.
+- `base_encode_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the altered block analysis.
+- `base_encode_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of altered blocks.
 - `dapt_encode_base_model`: DAPT model with token embeddings replaced by base embeddings.
 
 Validation losses on the sampled biomedical validation set:
@@ -130,7 +137,7 @@ These hybrids support three conclusions:
 
 1. To begin, DAPT did lead to a decrease in the subset validation loss, as expected and seen in prompt completions above. 
 2. DAPT embeddings appear necessary, but not sufficient, for the loss improvement. The (DAPT + base embeddings) model shows almost total loss of the DAPT advantage while (base + DAPT embeddings) makes validation loss worse than the original base model and much worse than the DAPT model.
-3. All the base model hybrids had worse loss than the base model, except for the (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block), which showed a marginal improvement over the base model. This supports coordinated changes are necessary for the DAPT advantage.
+3. All the base model hybrids had worse loss than the base model, except for the (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block), which showed a marginal improvement over the base model. This supports the idea that coordinated changes are necessary for the DAPT advantage.
 3. Our block analysis may point toward more important blocks for DAPT loss advantage, and this makes sense with simple logic of LLM action. The (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block) is much better than (base + DAPT embeddings + DAPT positional encoding + DAPT block 5 + DAPT block 6). This is consistent with the first and last tranformer blocks playing a key role in dealing with the altered DAPT embedding.
 
 The prompt-based `BB` probability results are consistent with this pattern:
@@ -151,8 +158,8 @@ The notebook's strongest supported conclusion is that DAPT altered the model in 
 A reasonable interpretation is:
 
 - DAPT moved the model toward biomedical continuations through coordinated changes across embeddings, attention value pathways, layer norms, and multiple transformer blocks.
-- The token embedding matrix is an important site of change, but it is not the main bottleneck for downstream biomedical behavior.
-- The middle transformer blocks and attention/value pathways appear more important than the notebook's earlier narrative suggests.
+- The token embedding matrix is an important site of change, but it must work with other changes to be effective.
+- The middle transformer blocks and attention/value pathways may show relatively small changes, but are critical for the DAPT loss advantage. 
 
 ## Limitations
 
@@ -164,22 +171,9 @@ A reasonable interpretation is:
 
 ## Appendix A: Extended Tables
 
-### A1. Hand-picked token-pair cosine comparisons
+### A1. Top 10 most changed tokens by base-vs-DAPT embedding cosine
 
-| Pair label | Token 1 | Token 2 | Base cosine | DAPT cosine | Ratio |
-| --- | --- | --- | ---: | ---: | ---: |
-| `sp_HER2` | `' HER'` | `'2'` | 0.259792 | 0.263318 | 1.013573 |
-| `HER_sp_2` | `'HER'` | `' 2'` | 0.171015 | 0.178956 | 1.046435 |
-| `sp_EGFR` | `' EG'` | `'FR'` | 0.256762 | 0.250341 | 0.974991 |
-| `EG_sp_FR` | `'EG'` | `' FR'` | 0.266662 | 0.237642 | 0.891174 |
-| `ERBB2_only_BB2` | `'BB'` | `'2'` | 0.275225 | 0.272602 | 0.990468 |
-| `ERBB2_only_spERBB` | `' ER'` | `'BB'` | 0.255247 | 0.260255 | 1.019622 |
-| `sp_kinase` | `' kin'` | `'ase'` | 0.270267 | 0.271175 | 1.003361 |
-| `cat vs dog` | `' cat'` | `' dog'` | 0.549790 | 0.535333 | 0.973704 |
-
-### A2. Top changed tokens by base-vs-DAPT embedding cosine
-
-Lowest cosine tokens from the notebook:
+Lowest cosine similarlity tokens from the notebook:
 
 | Rank | Token | Cosine similarity |
 | --- | --- | ---: |
@@ -193,6 +187,23 @@ Lowest cosine tokens from the notebook:
 | 8 | `' pretty'` | 0.900250 |
 | 9 | `' Chris'` | 0.900631 |
 | 10 | `'You'` | 0.900823 |
+
+### A2. Top 10 least changed tokens by base-vs-DAPT embedding cosine
+
+Highest cosine similarity tokens from the notebook:
+
+| Rank | Token | Cosine similarity |
+| --- | --- | ---: |
+| 1 | `'iterranean'` | 0.999482 |
+| 2 | `'algia'` | 0.999239 |
+| 3 | `'urations'` | 0.999215 |
+| 4 | `'IVES'` | 0.999181 |
+| 5 | `'GROUND'` | 0.999162 |
+| 6 | `'opsy'` | 0.999158 |
+| 7 | `'itative'` | 0.999126 |
+| 8 | `'asms'` | 0.999122 |
+| 9 | `'CRIPTION'` | 0.999104 |
+| 10 | `'ETHOD'` | 0.999102 |
 
 ### A3. Changed blocks (simple summary)
 
