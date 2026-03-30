@@ -1,103 +1,261 @@
 # llm-from-scratch
-**Two parts:**
-1. Building an LLM from scratch (based on the Raschka book - see below) with my own mods and experiments  
-2. Experimenting with domain-adaptive pretraining using biomedical abstracts  
 
+A modular GPT-2-small experimentation repository based on Sebastian Raschka’s *Build a Large Language Model (From Scratch)*, extended with biomedical domain-adaptive pretraining (DAPT) and analysis notebooks focused on **what changes in model behavior after continued pretraining**.
 
-## tl;dr  
-**1. A well-structured repo that will allow you to easily study, train, modify, and examine gpt-2 scale LLMs.**   
-Based on "Build an LLM from Scratch" by Raschka but unlike his repo, divided into functional sections as opposed to chapters for learning.  
-Very easy to install under WSL2-Ubuntu or onto google drive for use with colaboratory.  
-Simple notebooks that run some basic experiments.  
-**2. Demonstration of domain-adaptive pretraining using the gpt2-small (124M) model.**
-Additional training was from a corpus of biomedical abstracts. 
+## Overview
 
-## KEY OUTPUTS AND CONCLUSIONS FROM `compare_base_vs_dapt.ipynb`
-This notebook compares the base GPT-2 small OpenAI weights to a checkpoint after domain-adaptive pretraining (DAPT) on biomedical abstracts.
+This repository has two main goals:
 
-Key outputs:
-1. **Token embedding changes were real but mostly modest.**
-   a. Across all 50,257 token embeddings, cosine similarity between base vs DAPT vectors had min/max/mean of about `0.884 / 0.999 / 0.971`.
-   b. Simple token-pair checks for biomedical terms such as `HER` + `2` showed only small changes at the embedding level (for example, roughly +1% for `' HER'` with `'2'`).
-2. **The largest behavioral differences showed up in next-token probabilities, not just in raw embedding similarity.**
-   a. For a simple control prompt like `dogs and`, the DAPT model started surfacing biomedical continuations such as `' breast'`, `' HER'`, `' EG'`, `' plasma'`, and `' patients'`.
-   b. For a normal pet-context prompt, the base and DAPT models still both strongly predicted `' cats'`, showing that general language ability and context sensitivity were preserved.
-3. **Biomedical prompts showed strong targeted shifts after DAPT.**
-   a. After `...treat HER`, the probability of token `'2'` increased sharply, from about `0.55` in the base model to about `0.96` in the DAPT model.
-   b. In prompts designed to produce `ERBB2`, the DAPT model strongly favored `'BB'` where the base model did not, indicating domain-specific knowledge had become much more available to the model during generation.
+1. **Provide a cleaner, more reusable GPT-2-small learning and experimentation codebase**
+   - based on the code and concepts from Raschka’s book
+   - reorganized into a modular `src/` layout by functional role rather than by book chapter
+   - structured to make training, inspection, modification, and comparison easier
 
-Main conclusion:
-The notebook supports the idea that DAPT changed the model in a meaningful way for biomedical text. The changes are not mainly explained by large shifts in the token embedding layer alone. Instead, the stronger effect is in how the model reallocates next-token probabilities under biomedical context, which is exactly the behavior you would want from successful domain-adaptive pretraining.
+2. **Demonstrate biomedical domain-adaptive pretraining (DAPT)**
+   - continued pretraining of GPT-2-small (124M) on a corpus of biomedical abstracts
+   - analysis of how DAPT changes model behavior, including embedding-level changes and next-token probability shifts under biomedical context
 
-## IMPORTANT    
-This was my learning project - I went through "Build an LLM from scratch" by Raschka page by page.   
-The great majority of the code here is from Raschka's book "Build an LLM from Scratch". Note that this code is the actual code from the published book; it is not the code from Raschka's github site.
-My modifications and some additional code were from my direct coding, along with chatGPT and Gemini for coding. I did most planning of repo structure, which is logical as opposed to Raschka's structure, which is aimed toward learning part by part. The domain adaptive analysis parts were from my coding (w/LLM coding assistance).  
+## Why this repo matters
 
-## HOW TO: QUICKLY SEE WHAT I HAVE DONE AND SOME RESULTS  
-1. The most obvious way: go to /notebooks in github, click on a notebook, and look at the writeup.  
-	a. the notebooks are fully executed notebooks with the outputs included  
-	b. see "gpt2_basic_training_small.ipynb" for simple training  
-	c. for DAPT and results, see "gpt2_basic_training_abstracts.ipynb" for training and "compare_base_vs_DAPT.ipynb" for some analysis  
-2. To look at my refactoring (which is less obvious)  
-	a. look at the notebooks in /notebooks  
-	b. look at the code in /src 
-  
-## HOW IS THIS DIFFERENT FROM THE RASCHKA REPO?  
-**The biggest difference: I added the DAPT and analysis of results of DAPT.**  
-I modified a fair number of things and supplied the notebooks to allow easy training, examination of code and logic, and modification.  
-As to repo - Raschka has his repo by chapter from his book. This is by logical role. So, in a sense, this is streamlined. 
-I refactored this myself into the modules in /src/llm_from_scratch. So these are my choices. Also, the notebook and the main function in the notebook (run_training()) is of my design. The setup of the configuration parameters is my design. This was/is a learning project for me, which explains the evolution from really hacky and chapter based code to the refactored version.  
+This repository is intended as more than a chapter-by-chapter reimplementation.
 
-## HOW CAN I DOWNLOAD PUBMED ABSTRACTS IN BULK (QUERY-BASED)?  
-see the code in /tools/pubmed and the README.md file there  
+It shows three things:
 
+- **Code organization and engineering**
+  - chapter-based instructional code reorganized into a reusable modular project layout
 
-## HOW TO: UNDERSTAND AND MODIFY THE MODEL/RUN CONFIGURATION  
-OPTION 1:  
-1. just make a new notebook cell in the notebooks (early in the notebook!) that looks at "cfg".
-(cfg is a configuration dictionary. Note that cfg['model_config'] is a subdictionary with model parameters)
- 
-OPTION 2:  
-1. look at /src/llm_from_scratch/configs/gpt2small_config.py  
-2. RUN_CONFIG is loaded into the notebook and sets model configuration and run configuration  
+- **Model training and adaptation**
+  - GPT-2-small workflows for training, inspection, and biomedical domain-adaptive pretraining
 
-It is very easy to modify the config, as it is this simple dictionary.  
+- **Model analysis**
+  - concrete comparison of base vs DAPT behavior, including evidence that DAPT changed next-token behavior in targeted biomedical contexts
 
-## RUNNING AND INSTALLING
-This is very easy and all basic data is included, aside from a larger file of pubmed abstracts and also the OpenAI parameters for gpt2-small are not included. Raschka supplies complete information on getting these in his book. I supply the convenience function get_rachka_downloader.py to get these. Note that they must be moved into /data (do NOT use /src/data) for them to be recognized.
+## Project highlights
 
-To get a basic model going:  
-1. clone the repo into some new folder  
-2. setup a virtual environment in python  
-3. pip install -r requirements.txt  
-    a. note that this does not install the acceleration package for intel, which I only used in early portions of this project  
-4. run the notebook from /notebooks  
-    a. with a GPU, this can run fairly fast (~50 seconds for experiment 1 in colab with a T4) - but on my i7 system using CPU, it is much slower (approx 10 minutes)  
-    b. strong recommend to upload the code and data to google colab (free!) and use there  
+- Modular code layout under `src/llm_from_scratch`
+- Executed notebooks with outputs included
+- GPT-2-small training and inspection workflows
+- Biomedical DAPT experiments on PubMed-style abstracts
+- Comparison notebook analyzing base vs DAPT behavior
+- Bulk PubMed abstract download utilities under `tools/pubmed`
 
-## GOOGLE COLAB/DRIVE INSTRUCTIONS  
-1. clone the repo into some new local folder  
-2. DO NOT run pip install or any of that  
-3. In google drive, make a new folder for this (like llmfirst)  
-4. copy the directories into your new google drive folder  
-5. you will probably need to install the colaboratory extension  
-6. go to notebooks, open the notebook in colaboratory  
-7. Set the runtime to use T4 (as of this writing in late January 2026, this is the only good option)  
-8. Run the notebook!  
-    a. again, note that this is much faster than a local CPU (at least my local CPU)  
+## Results snapshot: what changed with DAPT?
 
-## WHAT IS NOT INCLUDED  
-This is basically up to the end of chapter 5 in the Raschka book - building the LLM.  
+The main comparison notebook is:
 
-It does not include:  
-1. code for chapter 6, which makes the LLM into a classifier  
-2. code for chapter 7, which does instruction tuning  
-3. use of other gpt2 models/architectures, like the 355M model  
-4. probabilistic next-token selection  
-I have implemented and run code for chapter 6 and 7, but not adjusted for this refactored code. Not currently on my todo list.  
-For #3, it is pretty simple to change the model to be like a larger model - just change a few parameters in the configuration file (specifically, parameters in cfg['model_config'] - and the differences are listed in the Raschka book). It is also quite easy to get the openai weights for the pretrained version of this model.
-For #4, I am currently interested in deterministic models to allow easy reproducibility and comparisons. Hence, no implementation.  
+- **`notebooks/compare_base_vs_DAPT.ipynb`**
 
-  
+This notebook compares the base GPT-2-small OpenAI weights with a checkpoint after domain-adaptive pretraining on biomedical abstracts.
 
+### Main finding
+
+The most important result was **not** large movement in token embeddings alone.  
+The stronger effect appeared in **context-sensitive next-token probabilities**, which is the behavior expected from successful domain-adaptive pretraining.
+
+### Table 1. Embedding similarity summary
+
+Across all 50,257 token embeddings, cosine similarity between the base and DAPT embedding vectors was:
+
+| Metric | Cosine similarity |
+|---|---:|
+| Min | 0.884 |
+| Mean | 0.971 |
+| Max | 0.999 |
+
+This suggests that token embedding changes were real but generally modest at the global level.  
+
+### Table 2. DAPT does not drive biomedical embeddings to be more similar  
+
+One hypothesis is that embeddings of tokens involved in the biomedical corpus would become more similar, but this was not observed:  
+
+| word | tokenid1 | token1 | tokenid2 | token2 | cos_sim (base) | cos_sim (DAPT) | ratio (DAPT/base) |
+|---|---:|---|---:|---|---:|---:|---:|
+| **biomedical related** |  |  | |  | | |  |
+| ' ER' vs 'BB' | 13793 | `' ER'` | 15199 | `'BB'` | 0.255247 | 0.260255 | 1.019622 |
+| ' HER' vs '2' | 24906 | `' HER'` | 17 | `'2'` | 0.259792 | 0.263318 | 1.013573 |
+| ' kin' vs 'ase' | 18967 | `' kin'` | 589 | `'ase'` | 0.270267 | 0.271175 | 1.003361 |
+| ' EG' vs 'FR' | 41513 | `' EG'` | 10913 | `'FR'` | 0.256762 | 0.250341 | 0.974991 |
+| **comparators** |  |  | |  | | |  |
+| 'HER' vs '2' | 16879 | `'HER'` | 362 | `' 2'` | 0.171015 | 0.178956 | 1.046435 |
+| 'EG' vs 'FR' | 7156 | `'EG'` | 8782 | `' FR'` | 0.266662 | 0.237642 | 0.891174 |
+| 'BB' vs '2' | 15199 | `'BB'` | 17 | `'2'` | 0.275225 | 0.272602 | 0.990468 |
+| ' cat' vs ' dog' | 3797 | `' cat'` | 3290 | `' dog'` | 0.549790 | 0.535333 | 0.973704 |
+
+Note tokenids are from GPT-2 tokenizer from tiktoken package
+
+### Table 3. Selected behavioral shifts after DAPT (Prompts in Appendix at end of README)
+
+| Prompt / context | Expected Token / continuation | Base model | DAPT model | Interpretation |
+|---|---|---:|---:|---|
+| **cancer context prompts** | |  | | |
+| cancer prompt ending with `HER` | `'2'` | 55.1% | 96.4% | Base model correct, but stronger biomedical association after DAPT |
+| cancer prompt that ends with ` ER` (and should eventually lead to `ERBB2`) | `'BB'` | 0.1% | 57.0% | DAPT shifted continuation behavior strongly toward biomedical terminology |
+| **control context prompts** | |  | | |
+| emergency room as ER prompt that ends with ` ER` | several possible | top: `.` (3.9%) | top: `,` (2.5%) | DAPT did not override context pointing toward ER as "emergency room" |
+| ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 72.3% | General language behavior remained substantially intact |
+
+### Interpretation
+
+The comparison suggests:
+
+- **global embedding drift was modest**
+- **behavioral differences were larger at the output level**
+- **DAPT made biomedical continuations much more likely in relevant contexts**
+- **the model still retained broad general-language behavior on ordinary prompts**
+
+That is the main technical takeaway from this project.
+
+## What is original in this repo
+
+This project builds on the published code from Raschka’s book, but differs from the book/repo in several important ways:
+
+### 1. Functional repo organization
+
+Raschka’s material is organized primarily by chapter for instructional purposes.  
+This repository reorganizes the code by logical role, making it easier to inspect, extend, and reuse.
+
+### 2. Biomedical DAPT workflow
+
+This repository adds a workflow for domain-adaptive pretraining on biomedical abstracts, including training notebooks and supporting utilities.
+
+### 3. Base-vs-DAPT analysis
+
+This repository adds comparison notebooks focused on **what changed after DAPT**, including:
+
+- token embedding comparisons
+- selected token-pair checks for biomedical terms
+- next-token probability comparisons under control and biomedical prompts
+
+## Main notebooks
+
+The fastest way to review the project is to open the notebooks in `notebooks/`. These notebooks are committed as executed notebooks with outputs included.
+
+### Recommended starting points
+
+- **`gpt2_basic_training_small.ipynb`**  
+  Basic GPT-2-small training workflow
+
+- **`gpt2_basic_training_abstracts.ipynb`**  
+  Biomedical domain-adaptive pretraining workflow
+
+- **`compare_base_vs_DAPT.ipynb`**  
+  Analysis of model differences between the base GPT-2-small model and the DAPT checkpoint
+
+## Repo structure
+
+- **`notebooks/`**  
+  Executed notebooks for training, evaluation, and analysis
+
+- **`src/llm_from_scratch/`**  
+  Refactored source code organized by functional role
+
+- **`tools/pubmed/`**  
+  Utilities for query-based bulk PubMed abstract download
+
+## Configuration
+
+Model and run settings are intended to be easy to inspect and modify.
+
+### Option 1: inspect configuration in a notebook
+
+Early in a notebook, examine the `cfg` dictionary.
+
+- `cfg` contains overall run configuration
+- `cfg["model_config"]` contains model-specific parameters
+
+### Option 2: inspect the config file directly
+
+See:
+
+- `src/llm_from_scratch/configs/gpt2small_config.py`
+
+`RUN_CONFIG` is loaded into the notebooks and defines both model configuration and run configuration.
+
+## Installation
+
+Basic setup:
+
+```bash
+git clone <your-repo-url>
+cd llm-from-scratch
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Notes
+
+- The Intel acceleration package used in some early experiments is not installed by `requirements.txt`
+- Some larger external files are not included in the repo
+- OpenAI GPT-2-small pretrained weights are also not included
+
+## Running the notebooks
+
+After installation, open a notebook from `notebooks/` and run it.
+
+A basic workflow is:
+
+1. Clone the repository
+2. Create and activate a Python virtual environment
+3. Install dependencies with `pip install -r requirements.txt`
+4. Open and run one of the notebooks in `notebooks/`
+
+For small experiments, local CPU execution is possible, but a GPU is much faster.
+
+## Using Google Colab / Google Drive
+
+This project also works well in Google Colab.
+
+### Suggested workflow
+
+1. Clone the repository locally
+2. Copy the repo into a folder in Google Drive
+3. Open a notebook from `notebooks/` in Colab
+4. Select a GPU runtime
+5. Run the notebook
+
+This is substantially faster than local CPU execution for training experiments.
+
+## PubMed abstract download
+
+For query-based bulk PubMed abstract download, see:
+
+- `tools/pubmed/`
+- `tools/pubmed/README.md`
+
+## Current scope
+
+This repository currently focuses on the core model-building and training workflow up to roughly the end of Chapter 5 of Raschka’s book, plus the biomedical DAPT extension and analysis work described above.
+
+Not currently integrated into this refactored repo:
+
+- Chapter 6 classifier code
+- Chapter 7 instruction-tuning code
+- Additional GPT-2 model sizes such as 355M wired into the current workflow
+- Probabilistic next-token sampling utilities
+
+Some of this functionality has been implemented separately during learning, but has not yet been migrated into the current refactored structure.
+
+## Attribution
+
+This project was built by working through Sebastian Raschka’s *Build a Large Language Model (From Scratch)* in detail.
+
+A substantial portion of the core model-building code and concepts comes from the book’s published code. My main contributions in this repository are:
+
+- reorganizing the code into a modular repo structure
+- designing the notebook-driven training workflow
+- defining the current configuration setup
+- adding biomedical DAPT experiments
+- adding analysis of base vs DAPT model behavior
+- adding utilities related to biomedical abstract collection
+
+## How to review this repo quickly
+
+If you want the fastest overview of what is here:
+
+1. Open the notebooks in `notebooks/`
+2. Start with:
+   - `gpt2_basic_training_small.ipynb`
+   - `gpt2_basic_training_abstracts.ipynb`
+   - `compare_base_vs_DAPT.ipynb`
+3. Then inspect the code under `src/llm_from_scratch/`
