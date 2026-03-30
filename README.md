@@ -2,6 +2,23 @@
 
 A modular GPT-2-small experimentation repository based on Sebastian Raschka's *Build a Large Language Model (From Scratch)*, extended with biomedical domain-adaptive pretraining (DAPT), model comparison notebooks, and utilities for PubMed abstract collection.
 
+## What this demonstrates
+
+- Transformer architecture implementation and training workflow in PyTorch
+- Domain-adaptive pretraining on biomedical text
+- Model comparison through prompt behavior, parameter-difference analysis, and validation-loss evaluation
+- Controlled hybrid-model and weight-transplantation experiments
+- Ability to move beyond tutorial reproduction into experiment design and interpretation
+
+## Technical skills shown
+
+- PyTorch
+- Transformer / GPT-2 architecture
+- Tokenization and pretrained-weight loading
+- Training loops, checkpointing, and validation
+- Experimental design for LLM behavior analysis
+- Model introspection via parameter and prompt-level comparisons
+
 ## What this repo is
 
 This project has two main purposes:
@@ -10,6 +27,17 @@ This project has two main purposes:
 2. Study what changes after domain-adaptive pretraining on biomedical abstracts.
 
 Compared with a chapter-oriented learning repo, this codebase is organized under `src/llm_from_scratch/` by functional role so it is easier to inspect, modify, and reuse.
+
+## Why this is not just a tutorial reproduction
+
+This repository started from the ideas and baseline code structure in Raschka's book, but the main value here is the additional work built around that base:
+
+- a refactored modular project layout
+- notebook-based training and inspection workflows
+- biomedical DAPT experiments
+- comparison of base vs DAPT behavior
+- hybrid-model swaps to test where the DAPT advantage lives in the network
+- a technical report that summarizes the results and limitations
 
 ## Main result
 
@@ -20,7 +48,7 @@ The main analytical result is that DAPT changed model behavior in a distributed 
 - Weight-transplantation experiments suggest that the DAPT advantage does not come from swapping in the DAPT embedding table alone.
 - The full DAPT model outperforms hybrid models that transplant only selected components.
 
-For the detailed write-up, see reports/DAPT_alteration_analysis.md.
+For the detailed write-up, see `reports/DAPT_alteration_analysis.md`.
 
 ## Results snapshot
 
@@ -64,6 +92,15 @@ Interpretation:
 - DAPT embeddings alone are not sufficient.
 - Replacing the DAPT model's embeddings with base embeddings reduces much of the DAPT advantage, but does not remove it entirely.
 - A broader set of coordinated changes across embeddings, norms, attention-related weights, and transformer blocks is needed to recover DAPT behavior.
+
+## Best places to review quickly
+
+If you are scanning this repo for technical signal, start here:
+
+1. `reports/DAPT_alteration_analysis.md`
+2. `notebooks/compare_base_vs_dapt.ipynb`
+3. `src/llm_from_scratch/models/`
+4. `src/llm_from_scratch/training/`
 
 ## Main notebooks
 
@@ -136,11 +173,3 @@ Not currently integrated into this refactored repo:
 ## Attribution
 
 This project was built by working through Sebastian Raschka's *Build a Large Language Model (From Scratch)* in detail. A substantial portion of the core model-building ideas and baseline code comes from the book's published code.
-
-The main additions in this repository are:
-
-- reorganization into a modular repo structure
-- notebook-driven training and comparison workflows
-- biomedical DAPT experiments
-- analysis of base vs DAPT behavior
-- utilities for biomedical abstract collection
