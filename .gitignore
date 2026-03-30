@@ -26,6 +26,7 @@ Thumbs.db
 *.log
 *.sqlite
 *.db
+.codex
 
 # Local README drafts
 README_*
