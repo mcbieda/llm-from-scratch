@@ -65,8 +65,8 @@ Selected outputs from the comparison:
 | Result | Base | DAPT |
 | --- | ---: | ---: |
 | Mean embedding cosine similarity | 0.9707 | n/a |
-| `P('2' | cancer context ending in HER)` | 55.1% | 96.4% |
-| `P('BB' | biomedical ER context)` | 0.1% | 57.0% |
+| `P('2' \| cancer context ending in HER)` | 55.1% | 96.4% |
+| `P('BB' \| biomedical ER context)` | 0.1% | 57.0% |
 | Validation loss on sampled biomedical subset | 2.9581 | 2.5963 |
 
 Key hybrid-model result:
