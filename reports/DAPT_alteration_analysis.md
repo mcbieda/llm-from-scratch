@@ -2,20 +2,22 @@
 
 ## Summary
 
-In this report, we examine the differences between a  gpt2-small model (124M parameters) using the base OpenAI weights and after domain-adaptive pretraining with a set of PubMed biomedical abstracts related to cancer.
-This report summarizes the executed analyses in compare_base_vs_dapt.ipynb found in /notebooks. DAPT was performed in gpt2_basic_training_abstracts.ipynb.  
+In this report, we examine the differences between a  gpt2-small model (124M parameters) using the base OpenAI weights (base_model) and after domain-adaptive pretraining with a set of PubMed biomedical abstracts related to cancer (dapt_model).
+This report summarizes the executed analyses in compare_base_vs_dapt.ipynb found in /notebooks. The notebook gpt2_basic_training_abstracts.ipynb was used for DAPT.  
 The main finding is that domain-adaptive pretraining (DAPT) materially changed model behavior, but the change is based on widespread changes in the model. 
 
 Although the token embedding layer (which was weight tyed to the output layer) showed the largest changes between base and dapt models, simple transplantation of this layer from dapt to base did not lead to dapt behavior.
 
-Overall, the strongest evidence for distributed representation comes from three observations. First, prompt-level next-token behavior shifts sharply in biomedical contexts, especially for ERBB2-related completions. Second, the largest parameter changes include the token embedding matrix, some layer-norm shift vectors, and attention value/output weights. Third, weight-transplantation experiments show that swapping the base embedding layer into the DAPT model (DAPT model + base embedding) nearly removes the DAPT advantage for the validation set, but swapping the DAPT embedding layer into the base model (base + DAPT embedding) does not produce the DAPT loss advantage, but instead produces a much worse model than the base model. However, a hybrid model with more swaps (base model + DAPT embedding + DAPT positional encoding + DAPT transformer first block + DAPT transformer last block) does lead to slight improvement of base model loss (on the validation subset) and a great increment over the simple embedding swap (base + DAPT embedding). Hence, there is support for distributed changes in the DAPT model that are critical for the DAPT model advantage for validation subset loss.
+Overall, the strongest evidence for distributed representation comes from three observations. First, prompt-level next-token behavior shifts sharply in biomedical contexts with DAPT. Second, direct evaluation of the largest parameter changes points toward several sites, including the token embedding matrix, some layer-norm shift vectors, and attention value/output weights. Third, weight-transplantation experiments support distributed representation. Swapping the base embedding layer into the DAPT model (DAPT model + base embedding) nearly removes the DAPT advantage for the validation set, but swapping only the DAPT embedding layer into the base model (base + DAPT embedding) does not produce the DAPT loss advantage, and instead creates a worse model than base alone. A base model with DAPT embedding and additional changes performs better than base and much better than base + DAPT embedding only, supporting the critical importance of alterations across various components. Hence, there is support for distributed changes in the DAPT model that are critical for the DAPT model advantage.
 
 ## Experimental Setup
 
-The notebook compares two GPT-2 small models:
+The two fundamental models are GPT-2 small (124M) models:
 
-- `base_model`: GPT-2 loaded from `data/gpt2_openai_params_124M.pkl`.
-- `dapt_model`: a checkpoint loaded from `data/TEST_abstracts_epoch_lastsave_step_lastsave.pth`.
+- `base_model`: GPT-2-small using OpenAI weights; loaded from `data/gpt2_openai_params_124M.pkl`.
+- `dapt_model`: a DAPT model  loaded from `data/TEST_abstracts_epoch_lastsave_step_lastsave.pth`.
+
+The DAPT model was trained on a set of biomedical abstracts that were derived by Pubmed Entrez system using the prompt "(cancer[Title/Abstract]) AND english[lang] AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])". These abstracts were further limited to the year range of 2005 - 2025. A random subset of these abstracts was used to create three different sets: a training, test, and validation set. However, for this small investigation, the "test" set was used for DAPT, comprising 7,267,986 characters and, after tokenization using the gpt-2 tokenizer, 1,679,880 tokens. For initial determination of validation loss, the full validation set was used (characters: 2,904,096, tokens: 671,020). In later investigations, only 2.5% of this validation set was used to compare a range of hybrid models. The loss values in the 2.5% set were close to the loss values for the full validation set for the base and DAPT models, supporting the usage of this smaller subset for efficient comparison across a set of models.
 
 Both models use the GPT-2 tokenizer and are evaluated in three ways:
 
