@@ -239,9 +239,12 @@ def generate_data_loaders(cfg):
         val_data=load_file(cfg['val_file'])
         print("Val file stats:")
         examine_data(val_data, cfg['tokenizer'])
-        test_data=load_file(cfg['test_file'])
-        print("Test file stats:")
-        examine_data(test_data, cfg['tokenizer'])
+        if cfg['test_file'] != "":
+            test_data=load_file(cfg['test_file'])
+            print("Test file stats:")
+            examine_data(test_data, cfg['tokenizer'])
+        else:
+            test_data=False
         train_loader, val_loader, test_loader = create_dataloaders(
             train_data,
             val_data,
