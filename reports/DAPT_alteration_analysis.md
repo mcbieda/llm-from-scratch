@@ -34,7 +34,7 @@ The notebook also constructs several hybrid models by transplanting selected DAP
 
 ### Embedding comparisons
 
-One possible locus for changes is the token embedding layer.
+We began by examining changes with DAPT in the token embedding layer.
 
 Across all `50,257` token embeddings, cosine similarity between the base and DAPT embedding vectors was:
 
@@ -48,7 +48,7 @@ This suggests that token embedding changes were real but generally modest at the
 
 The most changed tokens were not clear biomedical tokens or clearly related to the DAPT training set. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' someone'`, `' putting'`, `' Don'`, `' basically'`, and `' Matt'`. That weakens any claim that DAPT primarily rewired only a small set of biomedical token embeddings.
 
-Token embedding changes could be small, overall, but one possible mechanism for DAPT could be driving the token embeddings for frequent terms in our set together.
+Even if token embedding changes are small overall, changes in the similarity of token embeddings, especially those linked to biomedical terms, could be important.
 Due to the abstract selection criteria, our set will be much enriched for "HER2" (the protein overexpressed in HER2-positive cancers); "ERBB2" (the gene name for the gene that produces HER2); "EGFR" (the gene name for epidermal growth factor); "kinase" (technical term for proteins that activate other proteins). Due to the nature of GPT-2 standard tokenization with the inclusion of spaces in tokens, we can examine these vs closely related terms, as shown in the token-pair test table. For example, "HER2" as used would usually be " HER" and "2" and not "HER" and " 2". Examination of a set of these showed changes, but overall, the results are somewhat unclear.
 
 Small hand-picked token-pair tests also showed only modest changes:
@@ -87,8 +87,7 @@ The more general control prompts also show drift. For example, after ` dogs and`
 
 ### Parameter-difference analysis
 
-# FIX
-- add definition of L2 and relative L2
+
 
 The largest individual tensor changes were:
 
@@ -212,14 +211,14 @@ A reasonable interpretation is:
 - The token embedding matrix is an important site of change, but it must work with other changes to be effective.
 - The first and last transformer blocks appear to be important sites of change, with middle blocks being potentially less important.
 
-# FIX THE ORDERING HERE - most important to least  
+ 
 ## Limitations
 
-- The validation analysis uses only `2.5%` of one domain-specific validation file, so the loss ranking should be treated as directional rather than definitive.
-- Prompt-based evaluation is qualitative and uses a small hand-written prompt set.
-- Each model was fully deterministic, using the best next token prediction. Furthermore, the models did not start from random weights, but rather with the OpenAI supplied weights. Hence, run to run variance should be very small in magnitude.
 - The weight-transplantation study is selective rather than exhaustive, so it identifies useful clues, not a complete causal decomposition.
-- Several notebook interpretations are stronger than the evidence supports, especially claims that focus narrowly on biomedical token-pair embedding similarity.
+- Prompt-based evaluation is qualitative and uses a small hand-written prompt set.
+- The validation analysis uses only `2.5%` of one domain-specific validation file, so the loss ranking should be treated as directional rather than definitive.
+- Each model was fully deterministic, using the best next token prediction. Furthermore, the models did not start from random weights, but rather with the OpenAI supplied weights. Hence, run to run variance should be very small in magnitude.
+
 
 ## Appendix A: Extended Tables
 
