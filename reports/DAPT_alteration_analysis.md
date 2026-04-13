@@ -134,9 +134,29 @@ Arguably, taking the mean across the relative L2 values is not the proper way to
 
 By this measure, the rankings were somewhat different:
 
+| Block | Aggregated Block Relative L2 |
+| --- | ---: |
+| `tok_emb` | 0.2483 |
+| `pos_emb` | 0.0837 |
+| `trf_blocks.5` | 0.0812 |
+| `trf_blocks.6` | 0.0800 |
+| `trf_blocks.7` | 0.0797 |
+| `trf_blocks.3` | 0.0779 |
+| `trf_blocks.8` | 0.0775 |
+| `trf_blocks.4` | 0.0773 |
+| `trf_blocks.9` | 0.0755 |
+| `trf_blocks.2` | 0.0734 |
+| `final_norm` | 0.0386 |
+| `trf_blocks.10` | 0.0353 |
+| `trf_blocks.11` | 0.0353 |
+| `trf_blocks.0` | 0.0315 |
+| `trf_blocks.1` | 0.0296 |
 
+Note that the max is not listed here, because that would be a value from a single position in a tensor and would not be informative.
 
-It is worth considering the differences in these two measures. The "simple" measure weights _each tensor_ equally; the "aggregated" measure weights _each element of all the tensors in a block_ overall in the block equally. 
+Note that token embedding, positional embedding are the top 2, as with the simple block L2, but the next two are quite different. Here, the 3rd and 4th most changed are transformer blocks 5 and 6, while in the simple relative L2, it is blocks 11 and 0.
+
+It is worth considering the differences in these two measures. The "simple" measure weights _each tensor_ equally; the "aggregated" measure weights _each element of all the tensors in a block_ equally. 
 
 
 
@@ -146,8 +166,8 @@ The notebook evaluates several hybrid models:
 
 - `base_embed_dapt_model`: base model with only DAPT token embeddings.
 - `base_embed_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
-- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the altered block analysis.
-- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of altered blocks.
+- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the "simple" altered block analysis.
+- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of "simple" altered blocks; note that these alterations are the top 4 in the "aggregated" block change analysis.
 - `dapt_embed_base_model`: DAPT model with token embeddings replaced by base embeddings.
 
 Validation losses on the sampled biomedical validation set (2.5% of the entire validation set):
@@ -162,27 +182,25 @@ Validation losses on the sampled biomedical validation set (2.5% of the entire v
 | `base_embed_plusothers_dapt_model` | 3.2675 |
 | `base_embed_dapt_model` | 3.3093 |
 
-These hybrids support three conclusions:
+These hybrids support four conclusions:
 
 1. To begin, DAPT did lead to a decrease in the subset validation loss, as expected and seen in prompt completions above. 
 2. DAPT embeddings appear necessary, but not sufficient, for the loss improvement. The (DAPT + base embeddings) model shows almost total loss of the DAPT advantage while (base + DAPT embeddings) makes validation loss worse than the original base model and much worse than the DAPT model.
 3. All the base model hybrids had worse loss than the base model, except for the (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block), which showed a modest improvement over the base model. This supports the idea that coordinated changes are necessary for the DAPT advantage.
-4. The block analysis still points toward some blocks being more important than others for the DAPT loss advantage. The (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block) model is much better than (base + DAPT embeddings + DAPT positional encoding + DAPT block 5 + DAPT block 6), which is consistent with the first and last transformer blocks playing a key role in accommodating the altered DAPT embedding.
+4. The block analysis still points toward some blocks being more important than others for the DAPT loss advantage. The (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block) model is much better than (base + DAPT embeddings + DAPT positional encoding + DAPT block 5 + DAPT block 6), which is consistent with the first and last transformer blocks playing a key role in accommodating the altered DAPT embedding. 
+5. This also points toward the "simple" block change analysis being potentially superior to the "aggregated" block change analysis.
 
-The prompt-based `BB` probability results are consistent with this pattern:
+To examine this further, we tested the biomedical prompt ending in ' ER' that should lead to 'BB' as the next token, just as in the above table of prompt completion percentages. This was tested in a subset of models:
 
-# FIX
-- check these
-- why don't I have more??
 
-| Model | P('BB' in biomedical ER context) |
+| Model | P(`'BB'` in biomedical `' ER'` context) |
 | --- | ---: |
 | `base_model` | 0.000555 |
 | `base_embed_plusothers_dapt_model` | 0.000844 |
 | `dapt_embed_base_model` | 0.371979 |
 | `dapt_model` | 0.774406 |
 
-So the strongest ERBB2 behavior depends mainly on the broader DAPT transformer state, not on token embeddings alone.
+These results broadly support the conclusions from the loss values above; the dapt_model becomes significantly worse with usage of the base_model encoding and the base model becomes slightly better with usage of some dapt_model tensors.
 
 ## Interpretation
 
@@ -192,20 +210,20 @@ A reasonable interpretation is:
 
 - DAPT moved the model toward biomedical continuations through coordinated changes across embeddings, attention value pathways, layer norms, and multiple transformer blocks.
 - The token embedding matrix is an important site of change, but it must work with other changes to be effective.
-
-# FIX THIS POINT below  
-- The middle transformer blocks and attention/value pathways may show relatively small changes, but are critical for the DAPT loss advantage. 
+- The first and last transformer blocks appear to be important sites of change, with middle blocks being potentially less important.
 
 # FIX THE ORDERING HERE - most important to least  
 ## Limitations
 
 - The validation analysis uses only `2.5%` of one domain-specific validation file, so the loss ranking should be treated as directional rather than definitive.
 - Prompt-based evaluation is qualitative and uses a small hand-written prompt set.
-- The notebook compares only one base model and one DAPT checkpoint; there is no run-to-run variance estimate.
+- Each model was fully deterministic, using the best next token prediction. Furthermore, the models did not start from random weights, but rather with the OpenAI supplied weights. Hence, run to run variance should be very small in magnitude.
 - The weight-transplantation study is selective rather than exhaustive, so it identifies useful clues, not a complete causal decomposition.
 - Several notebook interpretations are stronger than the evidence supports, especially claims that focus narrowly on biomedical token-pair embedding similarity.
 
 ## Appendix A: Extended Tables
+
+Note that much more detailed and lengthy outputs are available in the compare_base_vs_dapt.ipynb notebook.
 
 ### A1. Top 10 most changed tokens by base-vs-DAPT embedding cosine
 
@@ -281,5 +299,5 @@ Highest cosine similarity tokens from the notebook:
 
 - The notebook's embedding analyses and prompt analyses should not be read as equivalent evidence. The prompt analyses are much more informative about actual model behavior.
 - Because GPT-2 ties the token embedding and output head weights, token-embedding changes also directly affect the output distribution, but the transplantation experiments show that this direct effect is still not enough to explain the full DAPT improvement.
-- The best-performing hybrid in the notebook is `base_embed_pos_trf0_11_model`, which suggests that some targeted block swaps can recover part of the domain gain, but the result is still clearly inferior to the full DAPT checkpoint.
+- The best-performing hybrid in the notebook is `base_embed_pos_trf0_11_model`, which suggests that some targeted block swaps can recover part of the domain gain, but the result is very from the full dapt_model loss.
 - The poor performance of `base_embed_dapt_model` is a useful negative result: a transplanted embedding table can be mismatched to the rest of the base network.
