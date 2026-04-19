@@ -64,10 +64,10 @@ Selected outputs from the comparison:
 
 | Result | Base | DAPT |
 | --- | ---: | ---: |
-| Mean embedding cosine similarity | 0.9707 | n/a |
-| `P('2' \| cancer context ending in HER)` | 55.1% | 96.4% |
-| `P('BB' \| biomedical ER context)` | 0.1% | 57.0% |
-| Validation loss on sampled biomedical subset | 2.9581 | 2.5963 |
+| Mean embedding cosine similarity | n/a | 0.9684 |
+| `P('2' \| cancer context ending in HER)` | 55.1% | 98.8% |
+| `P('BB' \| biomedical ER context)` | 0.1% | 77.4% |
+| Validation loss on sampled biomedical subset | 2.9233 | 2.5513 |
 
 Key hybrid-model result:
 
@@ -79,13 +79,13 @@ Key hybrid-model result:
 
 | Model | Subset validation loss |
 | --- | ---: |
-| `dapt_model` | 2.5963 |
-| `base_embed_pos_trf0_11_model` | 2.8796 |
-| `dapt_embed_base_model` | 2.9055 |
+| `dapt_model` | 2.5855 |
+| `base_embed_pos_trf0_11_model` | 2.8648 |
+| `dapt_embed_base_model` | 2.9057 |
 | `base_model` | 2.9581 |
-| `base_embed_pos_trf5_6_model` | 3.1716 |
-| `base_embed_plusothers_dapt_model` | 3.2686 |
-| `base_embed_dapt_model` | 3.3036 |
+| `base_embed_pos_trf5_6_model` | 3.1940 |
+| `base_embed_plusothers_dapt_model` | 3.2675 |
+| `base_embed_dapt_model` | 3.3093 |
 
 Interpretation:
 
