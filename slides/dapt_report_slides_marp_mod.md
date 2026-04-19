@@ -7,15 +7,21 @@ size: 16:9
 ---
 
 <style>
-section { font-size: 30px; }
-h1 { font-size: 44px; }
-h2 { font-size: 38px; }
-h3 { font-size: 34px; }
-table { font-size: 22px; }
-section.small { font-size: 26px; }
-section.small table { font-size: 18px; }
-section.tiny { font-size: 22px; }
-section.tiny table { font-size: 14px; }
+section {
+  font-size: 27px;
+  padding-top: 35px;
+  line-height: 1.2;
+}
+h1 { font-size: 40px; }
+h2 { font-size: 35px; }
+h3 { font-size: 31px; }
+li, p { line-height: 1.15; }
+table { font-size: 20px; }
+section.small { font-size: 24px; }
+section.small table { font-size: 16px; }
+section.tiny { font-size: 20px; }
+section.tiny table { font-size: 13px; }
+.logic-text { font-size: 0.75em; line-height: 1.1; }
 code { font-size: 0.9em; }
 </style>
 
@@ -135,6 +141,7 @@ $\text{Relative L2} = \frac{\lVert W_{\text{DAPT}} - W_{\text{base}} \rVert_2}{\
 
 ## Parameter-Difference Analysis (Block Level, analysis method 1)
 
+_top 5 displayed here_
 | Block | Simple block mean relative L2 | Simple block max relative L2 |
 | --- | ---: | ---: |
 | `tok_emb` | 0.2483 | 0.2483 |
@@ -142,7 +149,7 @@ $\text{Relative L2} = \frac{\lVert W_{\text{DAPT}} - W_{\text{base}} \rVert_2}{\
 | `trf_blocks.0` | 0.0735 | 0.2469 |
 | `trf_blocks.11` | 0.0728 | 0.2601 |
 | `trf_blocks.5` | 0.0698 | 0.1277 |
-| `trf_blocks.2` | 0.0671 | 0.1370 |
+
 
 Simple Block Mean Relative L2:
 
@@ -152,6 +159,7 @@ $\text{Simple Block Mean Relative } L_2 = \frac{1}{N}\sum_{i=1}^{N}\frac{\left\|
 <!-- _class: tiny -->
 ## Parameter-Difference Analysis (Block Level, analysis method 2)
 
+_top 5 displayed here_
 | Block | Aggregated block relative L2 |
 | --- | ---: |
 | `tok_emb` | 0.2483 |
@@ -159,16 +167,9 @@ $\text{Simple Block Mean Relative } L_2 = \frac{1}{N}\sum_{i=1}^{N}\frac{\left\|
 | `trf_blocks.5` | 0.0812 |
 | `trf_blocks.6` | 0.0800 |
 | `trf_blocks.7` | 0.0797 |
-| `trf_blocks.3` | 0.0779 |
-| `trf_blocks.8` | 0.0775 |
-| `trf_blocks.4` | 0.0773 |
-| `trf_blocks.9` | 0.0755 |
-| `trf_blocks.2` | 0.0734 |
-| `final_norm` | 0.0386 |
-| `trf_blocks.10` | 0.0353 |
-| `trf_blocks.11` | 0.0353 |
-| `trf_blocks.0` | 0.0315 |
-| `trf_blocks.1` | 0.0296 |
+
+
+
 
 Aggregated Block Relative L2:
 
@@ -217,6 +218,8 @@ _Do embeddings that are from closely associated tokens in the training set come 
 
 ## Weight Transplantation Experiments (Validation Loss)
 
+<div class="logic-text">
+
 Logic:
 `base_model`, `dapt_model`: reference values
 `dapt_embed_base_model`: embedding is important, add base embedding to dapt_model - should cause much worse loss
@@ -225,6 +228,7 @@ Logic:
 `base_embed_pos_trf5_6_model`: add top 4 most changed blocks (by aggregated weighting) to base model, should improve loss
 `base_embed_plusothers_dapt_model`: add dapt embedding and some other tensors to the base model, should improve loss
 
+</div>
 
 
 | Model | Validation loss (2.5% subset) |
@@ -241,7 +245,7 @@ Logic:
 
 ## Weight Transplantation Experiments (Prompt Behavior)
 
-| Model | P(`'BB'` in biomedical ` ' ER'` context) |
+| Model | P(`'BB'` \| biomedical ` ' ER'` context) |
 | --- | ---: |
 | `base_model` | 0.000555 |
 | `base_embed_plusothers_dapt_model` | 0.000844 |
