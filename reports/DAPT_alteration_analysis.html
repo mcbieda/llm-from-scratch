@@ -1,0 +1,774 @@
+<!DOCTYPE html><html><head>
+      <title>DAPT_alteration_analysis</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:////wsl.localhost/Ubuntu/home/markb/.vscode-server/extensions/shd101wyy.markdown-preview-enhanced-0.8.22/crossnote/dependencies/katex/katex.min.css">
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script>
+    </head>
+    <body for="html-export">
+      <div class="crossnote markdown-preview  ">
+      
+<p>writwr# Where Does Biomedical DAPT Change GPT-2 Small?</p>
+<h2 id="evidence-from-weight-differences-prompt-probes-and-transplant-experiments">Evidence from Weight Differences, Prompt Probes, and Transplant Experiments </h2>
+<h2 id="summary">Summary </h2>
+<p>This report examines how domain-adaptive pretraining (DAPT) on a biomedical abstract corpus changes a GPT-2 small (124M) model initialized from the base OpenAI weights. The central question is not just whether DAPT improves in-domain performance, but where that improvement appears to live in the model.</p>
+<p>The strongest result is that the DAPT gain is <strong>not</strong> explained by token-embedding changes alone, but rather appears to be distributed across several layers. Replacing the DAPT model's token embeddings with the base embeddings (DAPT + base embeddings) nearly completely removes the DAPT advantage, while transplanting only the DAPT token embeddings into the base model (base + DAPT embeddings) makes performance worse than the base model itself. In contrast, a base model with DAPT embeddings plus selected additional DAPT components partially recovers the in-domain gain. Taken together, these results support the view that biomedical DAPT produces a <strong>distributed, coordinated change</strong> across multiple components rather than a simple embedding-only shift.</p>
+<p>The report also shows that prompt-conditioned next-token behavior shifts strongly in biomedical contexts after DAPT, while parameter-difference analyses nominate several candidate sites of adaptation, including the token embeddings, layer-norm shift vectors, attention value weights, and some transformer blocks. Embedding-similarity analyses detect real but modest global movement, but those analyses by themselves understate the much larger behavioral shift seen in prompt probes and transplantation experiments.</p>
+<h2 id="experimental-setup">Experimental Setup </h2>
+<p>GPT-2 small (124M) was originally trained with a cutoff date of 2019 and, from the described training corpus, does not appear to include pubmed abstracts. Hence, our biomedical corpus of pubmed abstracts, many of which are post-2019, should have been a minimal part of the training set of the base model. Therefore, we would expect some significant changes with DAPT.</p>
+<p>The two primary models are GPT-2 small (124M) models:</p>
+<ul>
+<li><code>base_model</code>: GPT-2 small using the base OpenAI weights, loaded from <code>data/gpt2_openai_params_124M.pkl</code></li>
+<li><code>dapt_model</code>: a GPT-2 small model loaded from <code>data/TEST_abstracts_epoch_lastsave_step_lastsave.pth</code>, trained by continuing from the base model weights, DAPT details are found in the notebook <code>notebooks/gpt2_basic_training_abstracts.ipynb</code></li>
+</ul>
+<p>The DAPT corpus consists of PubMed abstracts retrieved with the query:</p>
+<pre data-role="codeBlock" data-info="text" class="language-text text"><code>(cancer[Title/Abstract]) AND english[lang] AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])
+</code></pre><p>The abstracts were further limited to the year range 2005-2025. In the project files, the corpus used for DAPT is labeled as a <code>test</code> split, but functionally it serves here as the "DAPT training corpus". That corpus contains 7,267,986 characters and 1,679,880 GPT-2-tokenized tokens.</p>
+<p>A separate validation corpus was used for evaluation. The full validation set contains 2,904,096 characters and 671,020 tokens. Initial loss comparisons between the base and DAPT models used the full validation set. Later comparisons among hybrid models used a 2.5% subset of the same validation file for efficiency. In the original notebook outputs, the base and DAPT losses on that subset remained close to the full-set losses, supporting its use as a directional comparison set for the larger panel of hybrids.</p>
+<p>The analysis uses four complementary views:</p>
+<ol>
+<li><strong>Weight transplantation experiments</strong> between the base and DAPT models</li>
+<li><strong>Prompt-based next-token probability comparisons</strong> in biomedical and non-biomedical contexts</li>
+<li><strong>Parameter-difference analyses</strong> at the tensor, block, and submodule levels</li>
+<li><strong>Embedding-level comparisons</strong> between the base and DAPT token embeddings</li>
+</ol>
+<h2 id="dapt-produces-significant-changes">DAPT Produces Significant Changes </h2>
+<h3 id="validation-loss-after-dapt">Validation Loss After DAPT </h3>
+<p>For the full validation set, loss decreased from 2.9233 to 2.5513 with DAPT, representing a drop of 0.372 nats or a relative decrease of 12.7%. In terms of perplexity, this represents a decrease of 31.1%.</p>
+<h3 id="prompt-based-behavioral-changes">Prompt-Based Behavioral Changes </h3>
+<p>Prompt probes show that DAPT produces large, context-dependent behavioral shifts in biomedical settings. Selected examples are shown below.</p>
+<table>
+<thead>
+<tr>
+<th>Prompt / context</th>
+<th>Expected token / continuation</th>
+<th style="text-align:right">Base model</th>
+<th style="text-align:right">DAPT model</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cancer context ending with <code>HER</code></td>
+<td><code>'2'</code></td>
+<td style="text-align:right">55.1%</td>
+<td style="text-align:right">98.8%</td>
+<td>DAPT strongly sharpens a biomedical completion that the base model already partially favors.</td>
+</tr>
+<tr>
+<td>Cancer context ending with <code>ER</code> and designed to continue toward <code>ERBB2</code></td>
+<td><code>'BB'</code></td>
+<td style="text-align:right">0.1%</td>
+<td style="text-align:right">77.4%</td>
+<td>DAPT strongly shifts the continuation toward biomedical terminology.</td>
+</tr>
+<tr>
+<td>Emergency-room context ending with <code>ER</code></td>
+<td>Several possible continuations</td>
+<td style="text-align:right">top: <code>.</code> (31.7%)</td>
+<td style="text-align:right">top: <code>' and'</code> (14.5%)</td>
+<td>DAPT changes the ranking, but context still prevents a collapse onto <code>ERBB2</code>.</td>
+</tr>
+<tr>
+<td>Ordinary pet-context prompt ending in <code>dogs and</code></td>
+<td><code>' cats'</code></td>
+<td style="text-align:right">94.0%</td>
+<td style="text-align:right">67.7%</td>
+<td>General-language behavior remains recognizable, but there is noticeable biomedical drift.</td>
+</tr>
+</tbody>
+</table>
+<p>The clearest qualitative example is the <code>ER -&gt; BB</code> shift in a cancer context. In that setting, the base model assigns negligible probability to <code>'BB'</code>, while the DAPT model makes it the top next token at about 77.4%.</p>
+<p>Importantly, the DAPT model does not simply force biomedical continuations everywhere. In the emergency-room context, the surrounding words still constrain the model away from <code>ERBB2</code>. At the same time, the pet-context control shows that DAPT introduces some spillover outside the domain: after <code> dogs and</code>, the DAPT model brings biomedical-flavored tokens such as <code>' patients'</code>, <code>' cancer'</code>, <code>' metast'</code>, <code>' tumor'</code>, and <code>' breast'</code> into its top predictions. So the main qualitative picture is not “biomedical specialization with no collateral effect,” but rather “strong biomedical specialization with some detectable general-context drift.”</p>
+<p>These prompt probes are not a substitute for broader evaluation, but they are useful because they reveal a large behavioral change that embedding similarity alone does not capture well.</p>
+<h2 id="parameter-difference-analysis">Parameter-Difference Analysis </h2>
+<p>Given the clear signs that our training did affect the model, we next examined sites of modification. Parameter-difference analyses help identify candidate sites of adaptation.</p>
+<p>The largest individual tensor changes were:</p>
+<table>
+<thead>
+<tr>
+<th>Tensor</th>
+<th style="text-align:right">Relative L2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trf_blocks.11.norm2.shift</code></td>
+<td style="text-align:right">0.2601</td>
+</tr>
+<tr>
+<td><code>tok_emb.weight</code></td>
+<td style="text-align:right">0.2483</td>
+</tr>
+<tr>
+<td><code>trf_blocks.0.norm1.shift</code></td>
+<td style="text-align:right">0.2469</td>
+</tr>
+<tr>
+<td><code>trf_blocks.10.norm2.shift</code></td>
+<td style="text-align:right">0.1673</td>
+</tr>
+<tr>
+<td><code>trf_blocks.4.norm2.shift</code></td>
+<td style="text-align:right">0.1456</td>
+</tr>
+<tr>
+<td><code>trf_blocks.0.att.W_value.weight</code></td>
+<td style="text-align:right">0.1410</td>
+</tr>
+<tr>
+<td><code>trf_blocks.9.norm2.shift</code></td>
+<td style="text-align:right">0.1399</td>
+</tr>
+</tbody>
+</table>
+<p>Here, relative L2 is defined as:</p>
+<p class="math"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>Relative&nbsp;L2</mtext><mo>=</mo><mfrac><mrow><mo stretchy="false">∥</mo><msub><mi>W</mi><mtext>DAPT</mtext></msub><mo>−</mo><msub><mi>W</mi><mtext>base</mtext></msub><msub><mo stretchy="false">∥</mo><mn>2</mn></msub></mrow><mrow><mo stretchy="false">∥</mo><msub><mi>W</mi><mtext>base</mtext></msub><msub><mo stretchy="false">∥</mo><mn>2</mn></msub><mo>+</mo><mi>ε</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\text{Relative L2} = \frac{\lVert W_{\text{DAPT}} - W_{\text{base}} \rVert_2}{\lVert W_{\text{base}} \rVert_2 + \varepsilon}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord">Relative&nbsp;L2</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mopen">∥</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">base</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal">ε</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mopen">∥</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">DAPT</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">base</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p><p>At the block level, a simple mean-relative-L2 summary ranked the most changed components as:</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th style="text-align:right">Simple block mean relative L2</th>
+<th style="text-align:right">Simple block max relative L2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tok_emb</code></td>
+<td style="text-align:right">0.2483</td>
+<td style="text-align:right">0.2483</td>
+</tr>
+<tr>
+<td><code>pos_emb</code></td>
+<td style="text-align:right">0.0838</td>
+<td style="text-align:right">0.0838</td>
+</tr>
+<tr>
+<td><code>trf_blocks.0</code></td>
+<td style="text-align:right">0.0735</td>
+<td style="text-align:right">0.2469</td>
+</tr>
+<tr>
+<td><code>trf_blocks.11</code></td>
+<td style="text-align:right">0.0728</td>
+<td style="text-align:right">0.2601</td>
+</tr>
+<tr>
+<td><code>trf_blocks.5</code></td>
+<td style="text-align:right">0.0698</td>
+<td style="text-align:right">0.1277</td>
+</tr>
+<tr>
+<td><code>trf_blocks.2</code></td>
+<td style="text-align:right">0.0671</td>
+<td style="text-align:right">0.1370</td>
+</tr>
+</tbody>
+</table>
+<p>At the submodule level, the largest changes were concentrated in:</p>
+<ul>
+<li><code>tok_emb</code></li>
+<li><code>att.W_value</code></li>
+<li><code>pos_emb</code></li>
+<li><code>norm2</code></li>
+<li><code>norm1</code></li>
+</ul>
+<p>An alternative aggregated block-level metric, which weights tensor elements rather than tensors, produced a somewhat different ranking:</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th style="text-align:right">Aggregated block relative L2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tok_emb</code></td>
+<td style="text-align:right">0.2483</td>
+</tr>
+<tr>
+<td><code>pos_emb</code></td>
+<td style="text-align:right">0.0837</td>
+</tr>
+<tr>
+<td><code>trf_blocks.5</code></td>
+<td style="text-align:right">0.0812</td>
+</tr>
+<tr>
+<td><code>trf_blocks.6</code></td>
+<td style="text-align:right">0.0800</td>
+</tr>
+<tr>
+<td><code>trf_blocks.7</code></td>
+<td style="text-align:right">0.0797</td>
+</tr>
+<tr>
+<td><code>trf_blocks.3</code></td>
+<td style="text-align:right">0.0779</td>
+</tr>
+<tr>
+<td><code>trf_blocks.8</code></td>
+<td style="text-align:right">0.0775</td>
+</tr>
+<tr>
+<td><code>trf_blocks.4</code></td>
+<td style="text-align:right">0.0773</td>
+</tr>
+<tr>
+<td><code>trf_blocks.9</code></td>
+<td style="text-align:right">0.0755</td>
+</tr>
+<tr>
+<td><code>trf_blocks.2</code></td>
+<td style="text-align:right">0.0734</td>
+</tr>
+<tr>
+<td><code>final_norm</code></td>
+<td style="text-align:right">0.0386</td>
+</tr>
+<tr>
+<td><code>trf_blocks.10</code></td>
+<td style="text-align:right">0.0353</td>
+</tr>
+<tr>
+<td><code>trf_blocks.11</code></td>
+<td style="text-align:right">0.0353</td>
+</tr>
+<tr>
+<td><code>trf_blocks.0</code></td>
+<td style="text-align:right">0.0315</td>
+</tr>
+<tr>
+<td><code>trf_blocks.1</code></td>
+<td style="text-align:right">0.0296</td>
+</tr>
+</tbody>
+</table>
+<p>The main point is not that any one metric definitively localizes the DAPT effect, but that both metrics identify a <strong>broad set of moved components</strong>. Token embeddings and positional embeddings are prominent under both views, while layer norms and attention-value pathways also stand out. These analyses are therefore useful for generating transplantation hypotheses, but they should not be treated as causal proof on their own.</p>
+<h2 id="embedding-comparisons">Embedding Comparisons </h2>
+<p>Given that embedding appeared to be a major site of change based on the analyses above, we performed further analysis of changes at this locus.</p>
+<p>We began by calculting cosine similarity for each of the tokens in the tokenizer. Across all 50,257 token embeddings, cosine similarity between the base and DAPT embedding vectors was:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Cosine similarity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Min</td>
+<td style="text-align:right">0.8702</td>
+</tr>
+<tr>
+<td>Mean</td>
+<td style="text-align:right">0.9684</td>
+</tr>
+<tr>
+<td>Max</td>
+<td style="text-align:right">0.9993</td>
+</tr>
+</tbody>
+</table>
+<p>So the token embeddings clearly changed, but globally they remained fairly similar. The most changed tokens were also not obviously dominated by biomedical tokens. The bottom of the cosine-similarity ranking includes tokens such as <code>' You'</code>, <code>' someone'</code>, <code>' putting'</code>, <code>' Don'</code>, <code>' basically'</code>, and <code>' Matt'</code>. That weakens any claim that DAPT acted primarily by selectively rewriting a small, obvious set of biomedical token vectors.</p>
+<p>We next examined whether DAPT was driving the representation of tokens comprising biomedical terms together. For example, " EGFR" is frequently found in our abstracts and decomposes into " EG" and "FR" at the token level. Because these tokens are much more frequently found together in our abstract set vs general text, we might expect their embeddings to coverge.<br>
+A small hand-picked set of token-pair tests also showed only modest changes:</p>
+<table>
+<thead>
+<tr>
+<th>Pair group</th>
+<th>Token pair</th>
+<th style="text-align:right">Base similarity</th>
+<th style="text-align:right">DAPT similarity</th>
+<th style="text-align:right">Ratio (DAPT/base)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Biomedical-related</td>
+<td><code>' ER'</code> vs <code>'BB'</code></td>
+<td style="text-align:right">0.2552</td>
+<td style="text-align:right">0.2638</td>
+<td style="text-align:right">1.0336</td>
+</tr>
+<tr>
+<td>Biomedical-related</td>
+<td><code>' HER'</code> vs <code>'2'</code></td>
+<td style="text-align:right">0.2598</td>
+<td style="text-align:right">0.2653</td>
+<td style="text-align:right">1.0213</td>
+</tr>
+<tr>
+<td>Biomedical-related</td>
+<td><code>' kin'</code> vs <code>'ase'</code></td>
+<td style="text-align:right">0.2703</td>
+<td style="text-align:right">0.2714</td>
+<td style="text-align:right">1.0044</td>
+</tr>
+<tr>
+<td>Biomedical-related</td>
+<td><code>' EG'</code> vs <code>'FR'</code></td>
+<td style="text-align:right">0.2568</td>
+<td style="text-align:right">0.2434</td>
+<td style="text-align:right">0.9481</td>
+</tr>
+<tr>
+<td>Comparator</td>
+<td><code>'HER'</code> vs <code>' 2'</code></td>
+<td style="text-align:right">0.1710</td>
+<td style="text-align:right">0.1721</td>
+<td style="text-align:right">1.0061</td>
+</tr>
+<tr>
+<td>Comparator</td>
+<td><code>'EG'</code> vs <code>' FR'</code></td>
+<td style="text-align:right">0.2667</td>
+<td style="text-align:right">0.2304</td>
+<td style="text-align:right">0.8641</td>
+</tr>
+<tr>
+<td>Comparator</td>
+<td><code>'BB'</code> vs <code>'2'</code></td>
+<td style="text-align:right">0.2752</td>
+<td style="text-align:right">0.2702</td>
+<td style="text-align:right">0.9816</td>
+</tr>
+<tr>
+<td>Comparator</td>
+<td><code>' cat'</code> vs <code>' dog'</code></td>
+<td style="text-align:right">0.5498</td>
+<td style="text-align:right">0.5287</td>
+<td style="text-align:right">0.9617</td>
+</tr>
+</tbody>
+</table>
+<p>These embedding results appear to show somewhat variable results, but certainly do not point toward convergence of embeddings as a clear mechanism.</p>
+<h2 id="weight-transplantation-experiments">Weight Transplantation Experiments </h2>
+<p>The transplantation experiments provide the clearest evidence in the report. The notebook evaluates the following hybrid models:</p>
+<ul>
+<li><code>base_embed_dapt_model</code>: base model with only DAPT token embeddings</li>
+<li><code>base_embed_plusothers_dapt_model</code>: base model with DAPT token embeddings, DAPT positional embeddings, and selected DAPT layer-norm shifts</li>
+<li><code>base_embed_pos_trf0_11_model</code>: base model with DAPT token embeddings, DAPT positional embeddings, and full DAPT transformer blocks 0 and 11</li>
+<li><code>base_embed_pos_trf5_6_model</code>: base model with DAPT token embeddings, DAPT positional embeddings, and full DAPT transformer blocks 5 and 6</li>
+<li><code>dapt_embed_base_model</code>: DAPT model with token embeddings replaced by base embeddings</li>
+</ul>
+<p>Validation losses on the 2.5% biomedical validation subset were:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align:right">Validation loss</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dapt_model</code></td>
+<td style="text-align:right">2.5855</td>
+</tr>
+<tr>
+<td><code>base_embed_pos_trf0_11_model</code></td>
+<td style="text-align:right">2.8648</td>
+</tr>
+<tr>
+<td><code>dapt_embed_base_model</code></td>
+<td style="text-align:right">2.9057</td>
+</tr>
+<tr>
+<td><code>base_model</code></td>
+<td style="text-align:right">2.9581</td>
+</tr>
+<tr>
+<td><code>base_embed_pos_trf5_6_model</code></td>
+<td style="text-align:right">3.1940</td>
+</tr>
+<tr>
+<td><code>base_embed_plusothers_dapt_model</code></td>
+<td style="text-align:right">3.2675</td>
+</tr>
+<tr>
+<td><code>base_embed_dapt_model</code></td>
+<td style="text-align:right">3.3093</td>
+</tr>
+</tbody>
+</table>
+<p>These results support four main conclusions.</p>
+<p>First, DAPT meaningfully improves in-domain validation loss relative to the base model.</p>
+<p>Second, DAPT token embeddings appear to be <strong>important but not sufficient</strong>. Replacing the DAPT embeddings with the base embeddings (<code>dapt_embed_base_model</code>) substantially removes the DAPT advantage. But the reverse operation is even more informative: transplanting only the DAPT embeddings into the base model (<code>base_embed_dapt_model</code>) makes performance worse than the original base model. That is a strong negative result against an embedding-only explanation.</p>
+<p>Third, the best hybrid model is not the embedding-only hybrid but <code>base_embed_pos_trf0_11_model</code>, which combines DAPT embeddings and positional embeddings with selected full DAPT blocks. This suggests that the DAPT gain depends on coordinated changes across multiple parts of the network.</p>
+<p>Fourth, the contrast between <code>base_embed_pos_trf0_11_model</code> and <code>base_embed_pos_trf5_6_model</code> suggests that some block locations may matter more than others for partial recovery of the DAPT gain. However, that result should be interpreted cautiously: it nominates candidate important blocks rather than proving that blocks 0 and 11 are uniquely causal.</p>
+<p>To connect the loss results back to behavior, the report also examined the biomedical prompt context ending in <code>' ER'</code>, where the next token should be <code>'BB'</code> in an <code>ERBB2</code>-style continuation:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align:right">P(<code>'BB'</code> in biomedical <code>' ER'</code> context)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>base_model</code></td>
+<td style="text-align:right">0.000555</td>
+</tr>
+<tr>
+<td><code>base_embed_plusothers_dapt_model</code></td>
+<td style="text-align:right">0.000844</td>
+</tr>
+<tr>
+<td><code>dapt_embed_base_model</code></td>
+<td style="text-align:right">0.371979</td>
+</tr>
+<tr>
+<td><code>dapt_model</code></td>
+<td style="text-align:right">0.774406</td>
+</tr>
+</tbody>
+</table>
+<p>This table reinforces the main loss-based conclusion. The full DAPT model strongly favors the biomedical continuation. Replacing its embeddings with the base embeddings sharply weakens that behavior, but not all the way back to the base model. That pattern is consistent with embeddings mattering substantially while still being only part of the story.</p>
+<h2 id="interpretation">Interpretation </h2>
+<p>The strongest supported conclusion from the notebook is that biomedical DAPT changed the model in a <strong>distributed, coordinated way</strong>.</p>
+<p>Three takeaways can be ranked by confidence.</p>
+<p><strong>Highest confidence:</strong> the DAPT improvement is not explained by token-embedding swaps alone. The embedding-only transplant fails badly, while removing DAPT embeddings from the DAPT model also sharply weakens performance.</p>
+<p><strong>Moderate confidence:</strong> the DAPT gain depends on coordinated changes across multiple components, including embeddings and at least some additional transformer machinery. The best hybrid model partially recovers the DAPT advantage only when embeddings are combined with other transplanted DAPT components.</p>
+<p><strong>Lower confidence but plausible:</strong> some block locations may matter more than others for partial recovery. The block-0-and-11 hybrid performed much better than the block-5-and-6 hybrid, but the current experiments are too selective to treat that as a final mechanistic localization.</p>
+<p>Overall, the report supports a view in which DAPT on this biomedical corpus did not simply rewrite a few domain token vectors. Instead, it altered how multiple model components work together to produce biomedical continuations.</p>
+<h2 id="limitations">Limitations </h2>
+<p>This report has several important limitations.</p>
+<ul>
+<li>The weight-transplantation study is selective rather than exhaustive, so it provides useful clues rather than a full causal decomposition.</li>
+<li>The prompt-based evaluation is qualitative and relies on a small hand-written prompt set.</li>
+<li>The validation comparison among hybrid models uses only 2.5% of one domain-specific validation file, so the ranking should be treated as directional rather than definitive.</li>
+<li>Out-of-domain evaluation is limited. Aside from a few control prompts, this report does not quantify how much general-language capability was preserved or degraded after DAPT.</li>
+<li>The parameter-difference analyses identify where weights moved, but not which of those movements are strictly necessary for the behavioral change.</li>
+</ul>
+<h2 id="appendix-a-extended-tables">Appendix A: Extended Tables </h2>
+<p>Much more detailed output remains available in <code>compare_base_vs_dapt.ipynb</code>. The tables below are retained mainly as supporting reference material.</p>
+<h3 id="a1-top-10-most-changed-tokens-by-base-vs-dapt-embedding-cosine">A1. Top 10 most changed tokens by base-vs-DAPT embedding cosine </h3>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Token</th>
+<th style="text-align:right">Cosine similarity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>' You'</code></td>
+<td style="text-align:right">0.870204</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>' someone'</code></td>
+<td style="text-align:right">0.879040</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>' putting'</code></td>
+<td style="text-align:right">0.879239</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>' Don'</code></td>
+<td style="text-align:right">0.882754</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>' basically'</code></td>
+<td style="text-align:right">0.884582</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>' Matt'</code></td>
+<td style="text-align:right">0.885449</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>'If'</code></td>
+<td style="text-align:right">0.886136</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>' pretty'</code></td>
+<td style="text-align:right">0.886501</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>'You'</code></td>
+<td style="text-align:right">0.887201</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>' your'</code></td>
+<td style="text-align:right">0.887860</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2-top-10-least-changed-tokens-by-base-vs-dapt-embedding-cosine">A2. Top 10 least changed tokens by base-vs-DAPT embedding cosine </h3>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Token</th>
+<th style="text-align:right">Cosine similarity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>'antam'</code></td>
+<td style="text-align:right">0.999302</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>'illance'</code></td>
+<td style="text-align:right">0.999287</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>'edded'</code></td>
+<td style="text-align:right">0.999270</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>'itaire'</code></td>
+<td style="text-align:right">0.999259</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>'Aw'</code></td>
+<td style="text-align:right">0.999122</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>' congress'</code></td>
+<td style="text-align:right">0.999079</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>'ptions'</code></td>
+<td style="text-align:right">0.999056</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>'emaker'</code></td>
+<td style="text-align:right">0.999035</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>'%]'</code></td>
+<td style="text-align:right">0.999028</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>'mark'</code></td>
+<td style="text-align:right">0.999002</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a3-changed-blocks-simple-summary">A3. Changed blocks (simple summary) </h3>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th style="text-align:right">Mean relative L2</th>
+<th style="text-align:right">Max relative L2</th>
+<th style="text-align:right">Mean cosine similarity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tok_emb</code></td>
+<td style="text-align:right">0.248346</td>
+<td style="text-align:right">0.248346</td>
+<td style="text-align:right">0.973790</td>
+</tr>
+<tr>
+<td><code>pos_emb</code></td>
+<td style="text-align:right">0.083753</td>
+<td style="text-align:right">0.083753</td>
+<td style="text-align:right">0.996992</td>
+</tr>
+<tr>
+<td><code>trf_blocks.0</code></td>
+<td style="text-align:right">0.073543</td>
+<td style="text-align:right">0.246904</td>
+<td style="text-align:right">0.996391</td>
+</tr>
+<tr>
+<td><code>trf_blocks.11</code></td>
+<td style="text-align:right">0.072841</td>
+<td style="text-align:right">0.260089</td>
+<td style="text-align:right">0.996180</td>
+</tr>
+<tr>
+<td><code>trf_blocks.5</code></td>
+<td style="text-align:right">0.069812</td>
+<td style="text-align:right">0.127671</td>
+<td style="text-align:right">0.997597</td>
+</tr>
+<tr>
+<td><code>trf_blocks.2</code></td>
+<td style="text-align:right">0.067052</td>
+<td style="text-align:right">0.137047</td>
+<td style="text-align:right">0.997792</td>
+</tr>
+<tr>
+<td><code>trf_blocks.9</code></td>
+<td style="text-align:right">0.066633</td>
+<td style="text-align:right">0.139850</td>
+<td style="text-align:right">0.997828</td>
+</tr>
+<tr>
+<td><code>trf_blocks.6</code></td>
+<td style="text-align:right">0.065370</td>
+<td style="text-align:right">0.135014</td>
+<td style="text-align:right">0.997941</td>
+</tr>
+<tr>
+<td><code>trf_blocks.7</code></td>
+<td style="text-align:right">0.064789</td>
+<td style="text-align:right">0.121903</td>
+<td style="text-align:right">0.998029</td>
+</tr>
+<tr>
+<td><code>trf_blocks.10</code></td>
+<td style="text-align:right">0.064318</td>
+<td style="text-align:right">0.167272</td>
+<td style="text-align:right">0.997726</td>
+</tr>
+<tr>
+<td><code>trf_blocks.3</code></td>
+<td style="text-align:right">0.064316</td>
+<td style="text-align:right">0.108617</td>
+<td style="text-align:right">0.998022</td>
+</tr>
+<tr>
+<td><code>trf_blocks.8</code></td>
+<td style="text-align:right">0.064096</td>
+<td style="text-align:right">0.112774</td>
+<td style="text-align:right">0.998113</td>
+</tr>
+<tr>
+<td><code>trf_blocks.4</code></td>
+<td style="text-align:right">0.064057</td>
+<td style="text-align:right">0.145634</td>
+<td style="text-align:right">0.997872</td>
+</tr>
+<tr>
+<td><code>trf_blocks.1</code></td>
+<td style="text-align:right">0.062857</td>
+<td style="text-align:right">0.119669</td>
+<td style="text-align:right">0.998135</td>
+</tr>
+<tr>
+<td><code>final_norm</code></td>
+<td style="text-align:right">0.043623</td>
+<td style="text-align:right">0.049168</td>
+<td style="text-align:right">0.999872</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a4-submodule-summary">A4. Submodule summary </h3>
+<table>
+<thead>
+<tr>
+<th>Submodule</th>
+<th style="text-align:right">Mean relative L2</th>
+<th style="text-align:right">Max relative L2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tok_emb</code></td>
+<td style="text-align:right">0.248346</td>
+<td style="text-align:right">0.248346</td>
+</tr>
+<tr>
+<td><code>att.W_value</code></td>
+<td style="text-align:right">0.091979</td>
+<td style="text-align:right">0.141011</td>
+</tr>
+<tr>
+<td><code>pos_emb</code></td>
+<td style="text-align:right">0.083753</td>
+<td style="text-align:right">0.083753</td>
+</tr>
+<tr>
+<td><code>norm2</code></td>
+<td style="text-align:right">0.083445</td>
+<td style="text-align:right">0.260089</td>
+</tr>
+<tr>
+<td><code>norm1</code></td>
+<td style="text-align:right">0.071555</td>
+<td style="text-align:right">0.246904</td>
+</tr>
+<tr>
+<td><code>ff.layers.0</code></td>
+<td style="text-align:right">0.066398</td>
+<td style="text-align:right">0.088764</td>
+</tr>
+<tr>
+<td><code>att.out_proj</code></td>
+<td style="text-align:right">0.063377</td>
+<td style="text-align:right">0.108617</td>
+</tr>
+<tr>
+<td><code>ff.layers.2</code></td>
+<td style="text-align:right">0.059595</td>
+<td style="text-align:right">0.094519</td>
+</tr>
+<tr>
+<td><code>att.W_query</code></td>
+<td style="text-align:right">0.055320</td>
+<td style="text-align:right">0.090683</td>
+</tr>
+<tr>
+<td><code>att.W_key</code></td>
+<td style="text-align:right">0.052851</td>
+<td style="text-align:right">0.092317</td>
+</tr>
+<tr>
+<td><code>final_norm</code></td>
+<td style="text-align:right">0.043623</td>
+<td style="text-align:right">0.049168</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-b-additional-notes">Appendix B: Additional Notes </h2>
+<ul>
+<li>Prompt-based analyses are more informative about actual model behavior than embedding-similarity analyses alone.</li>
+<li>Because GPT-2 ties the token embedding and output-head weights, token-embedding changes directly affect next-token probabilities.</li>
+<li>The best-performing hybrid in the notebook is <code>base_embed_pos_trf0_11_model</code>, which shows that some targeted block swaps can recover part of the domain gain, but still falls well short of the full <code>dapt_model</code>.</li>
+<li>The poor performance of <code>base_embed_dapt_model</code> is an important negative result: a transplanted embedding table can be mismatched to the rest of the base network.</li>
+</ul>
+
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

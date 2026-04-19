@@ -1,93 +1,65 @@
-# DAPT Alteration Analysis
+# Where Does Biomedical DAPT Change GPT-2 Small?
+## Evidence from Weight Differences, Prompt Probes, and Transplant Experiments
 
 ## Summary
 
-In this report, we examine the differences between a  gpt2-small model (124M parameters) using the base OpenAI weights (base_model) and after domain-adaptive pretraining with a set of PubMed biomedical abstracts related to cancer (dapt_model).
-This report summarizes the executed analyses in compare_base_vs_dapt.ipynb found in /notebooks. The notebook gpt2_basic_training_abstracts.ipynb was used for DAPT.  
-The main finding is that domain-adaptive pretraining (DAPT) significantly changed model behavior, but the change is not localized to a single layer/component, but rather is from alterations in multiple components. 
+This report examines how domain-adaptive pretraining (DAPT) on a biomedical abstract corpus changes a GPT-2 small (124M) model initialized from the base OpenAI weights. The central question is not whether DAPT improves in-domain performance, but where that improvement appears to live in the model.
 
-Overall, the strongest evidence for distributed representation comes from three observations. First, prompt-level next-token behavior shifts sharply in biomedical contexts with DAPT. Second, direct evaluation of the largest parameter changes points toward several sites, including the token embedding matrix, some layer-norm shift vectors, and attention value/output weights. Third - and comprising the strongest evidence -  weight-transplantation experiments support distributed representation. Swapping the base embedding layer into the DAPT model (DAPT model + base embedding) nearly removes the DAPT advantage for the validation set, but swapping only the DAPT embedding layer into the base model (base + DAPT embedding) does not produce the DAPT loss advantage, and instead creates a worse model than base alone. A base model with DAPT embedding and additional changes performs better than base and much better than base + DAPT embedding only, supporting the critical importance of alterations across various components. Hence, there is support for distributed changes in the DAPT model that are critical for the DAPT model advantage.
+**The strongest result is that the DAPT gain is _not_ explained by token-embedding changes alone, but rather appears to be distributed across several layers.** Replacing the DAPT model's token embeddings with the base embeddings (DAPT + base embeddings) nearly completely removes the DAPT advantage, while transplanting only the DAPT token embeddings into the base model (base + DAPT embeddings) makes performance worse than the base model itself. In contrast, a base model with DAPT embeddings plus selected additional DAPT components partially recovers the in-domain gain. Taken together, these results support the view that biomedical DAPT produces a **distributed, coordinated change** across multiple components rather than a simple embedding-only shift.
+
+The report also shows that prompt-conditioned next-token behavior shifts strongly in biomedical contexts after DAPT, while parameter-difference analyses nominate several candidate sites of adaptation, including the token embeddings, layer-norm shift vectors, attention value weights, and some transformer blocks. Embedding-similarity analyses detect real but modest global movement, but those analyses by themselves understate the much larger behavioral shift seen in prompt probes and transplantation experiments.
 
 ## Experimental Setup
 
-The two fundamental models are GPT-2 small (124M) models:
+GPT-2 small (124M) was originally trained with a cutoff date of 2019 and, from the described training corpus, does not appear to include pubmed abstracts. Hence, our biomedical corpus of pubmed abstracts, many of which are post-2019, should have been a minimal part of the training set of the base model. Therefore, we would expect some significant changes with DAPT.
 
-- `base_model`: GPT-2-small using OpenAI weights; loaded from `data/gpt2_openai_params_124M.pkl`.
-- `dapt_model`: a DAPT model  loaded from `data/TEST_abstracts_epoch_lastsave_step_lastsave.pth`; this model was trained starting with the base_model weights
+The two primary models are GPT-2 small (124M) models:
 
-The DAPT model was trained on a set of biomedical abstracts that were derived by Pubmed Entrez system using the prompt "(cancer[Title/Abstract]) AND english[lang] AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])". These abstracts were further limited to the year range of 2005 - 2025. A random subset of these abstracts was used to create three different sets: a training, test, and validation set. However, for this small investigation, the "test" set was used for DAPT, comprising 7,267,986 characters and, after tokenization using the gpt-2 tokenizer, 1,679,880 tokens. For initial determination of validation loss, the full validation set was used (characters: 2,904,096, tokens: 671,020). In later investigations, only 2.5% of this validation set was used to compare a range of hybrid models. The loss values in the 2.5% set were close to the loss values for the full validation set for the base and DAPT models, supporting the usage of this smaller subset for efficient comparison across a set of models.
+- `base_model`: GPT-2 small using the base OpenAI weights
+- `dapt_model`: a GPT-2 small model trained by continuing from the base model weights; DAPT details are found in the notebook `notebooks/gpt2_basic_training_abstracts.ipynb`
 
-Both models use the GPT-2 tokenizer and are evaluated in three ways:
+The DAPT corpus consists of PubMed abstracts (https://pubmed.ncbi.nlm.nih.gov/) retrieved with the query:
 
-1. Embedding-level comparisons between the base and DAPT token embeddings.
-2. Prompt-based next-token probability comparisons on general and biomedical prompts.
-3. Validation-loss evaluation on wither the entire validation set or a slice of `pubmed_abstracts_2005to2025ONLY_ERBB2_ABSTRACTS_getv7_english_val_abstracts.txt`.
 
-The notebook also constructs several hybrid models by transplanting selected DAPT weights into the base model, or base embeddings into the DAPT model.
+(cancer[Title/Abstract]) AND english[lang] AND (ERBB2[Title/Abstract] OR HER2[Title/Abstract] OR EGFR[Title/Abstract])
 
-## Main Results
 
-# FIX
- - check numbers
- - add hypotheses - why these are important
- - add the measures
+The abstracts were further limited to the year range 2005-2025. In the project files, the corpus used for DAPT is labeled as a `test` split, but functionally it serves here as the "DAPT training corpus". That corpus contains 7,267,986 characters (1,679,880 GPT-2-tokenizer tokens).
 
-### Embedding comparisons
+A separate validation corpus was used for evaluation. The full validation set contains 2,904,096 characters (671,020 tokens). Initial loss comparisons between the base and DAPT models used the full validation set. Later comparisons among hybrid models used a 2.5% subset of the same validation file for efficiency. In the original notebook outputs, the base and DAPT losses on that subset remained close to the full-set losses, supporting its use as a directional comparison set for the larger panel of hybrids.
 
-We began by examining changes with DAPT in the token embedding layer.
+Training was for a single epoch, with a batch size of 2 and a stride of 1024.
 
-Across all `50,257` token embeddings, cosine similarity between the base and DAPT embedding vectors was:
 
-| Metric | Cosine similarity |
-| --- | ---: |
-| Min | 0.8702 |
-| Mean | 0.9684 |
-| Max | 0.9993 |
+## DAPT Produces Significant Changes 
 
-This suggests that token embedding changes were real but generally modest at the global level.
+We began by examining whether our limited training set and training regimen shifted model behavior significantly.
 
-The most changed tokens were not clear biomedical tokens or clearly related to the DAPT training set. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' someone'`, `' putting'`, `' Don'`, `' basically'`, and `' Matt'`. That weakens any claim that DAPT primarily rewired only a small set of biomedical token embeddings.
-
-Even if token embedding changes are small overall, changes in the similarity of token embeddings, especially those linked to biomedical terms, could be important.
-Due to the abstract selection criteria, our set will be much enriched for "HER2" (the protein overexpressed in HER2-positive cancers); "ERBB2" (the gene name for the gene that produces HER2); "EGFR" (the gene name for epidermal growth factor); "kinase" (technical term for proteins that activate other proteins). Due to the nature of GPT-2 standard tokenization with the inclusion of spaces in tokens, we can examine these vs closely related terms, as shown in the token-pair test table. For example, "HER2" as used would usually be " HER" and "2" and not "HER" and " 2". Examination of a set of these showed changes, but overall, the results are somewhat unclear.
-
-Small hand-picked token-pair tests also showed only modest changes:
-
-| Pair group | Token pair | Base similarity | DAPT similarity | Ratio (DAPT/base) |
-| --- | --- | ---: | ---: | ---: |
-| Biomedical-related | `' ER'` vs `'BB'` | 0.2552 | 0.2638 | 1.0336 |
-| Biomedical-related | `' HER'` vs `'2'` | 0.2598 | 0.2653 | 1.0213 |
-| Biomedical-related | `' kin'` vs `'ase'` | 0.2703 | 0.2714 | 1.0044 |
-| Biomedical-related | `' EG'` vs `'FR'` | 0.2568 | 0.2434 | 0.9481 |
-| Comparator | `'HER'` vs `' 2'` | 0.1710 | 0.1721 | 1.0061 |
-| Comparator | `'EG'` vs `' FR'` | 0.2667 | 0.2304 | 0.8641 |
-| Comparator | `'BB'` vs `'2'` | 0.2752 | 0.2702 | 0.9816 |
-| Comparator | `' cat'` vs `' dog'` | 0.5498 | 0.5287 | 0.9617 |
-
-_Note "similarity" in above table is cosine similarity_
+### Validation Loss After DAPT
+For the full validation set, loss decreased from 2.9233 to 2.5513 with DAPT, representing a drop of 0.372 nats or a relative decrease of 12.7%. In terms of perplexity, this represents a decrease of 31.1%.
 
 
 
-### Prompt-based behavior changes
 
-Prompt behavior changed much more dramatically than the token-pair embedding checks suggest.
+### Prompt-Based Behavioral Changes
 
-Selected examples:
+Prompt probes show that DAPT produces large, context-dependent behavioral shifts in biomedical settings. Selected examples are shown below.
 
 | Prompt / context | Expected token / continuation | Base model | DAPT model | Interpretation |
 | --- | --- | ---: | ---: | --- |
-| Cancer context ending with `HER` | `'2'` | 55.1% | 98.8% | Base model was already correct, but DAPT sharply strengthens the biomedical completion. |
+| Cancer context ending with `HER` | `'2'` | 55.1% | 98.8% | DAPT strongly sharpens a biomedical completion that the base model already partially favors. |
 | Cancer context ending with `ER` and designed to continue toward `ERBB2` | `'BB'` | 0.1% | 77.4% | DAPT strongly shifts the continuation toward biomedical terminology. |
-| Emergency-room context ending with `ER` | Several possible continuations | top: `.` (31.7%) | top: `' and'` (14.5%) | DAPT changes ranking, but context still prevents the model from strongly collapsing onto `ERBB2`, which would be the `'BB'` token. |
-| Ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 67.7% | General language behavior remains substantially intact despite biomedical drift. |
+| Emergency-room context ending with `ER` | Several possible continuations | top: `.` (31.7%) | top: `' and'` (14.5%) | DAPT changes the ranking, but context still prevents a collapse onto `ERBB2`. |
+| Ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 67.7% | General-language behavior remains recognizable, but there is noticeable biomedical drift. |
 
-The ERBB2-style prompt is the clearest qualitative result. In the cancer context ending in `ER`, the base model assigns negligible probability to `BB`, while the DAPT model makes `BB` the top next token at about 77.4%. This is a large functional shift.
+The clearest qualitative example is the `ER -> BB` prompt example in a cancer context. In that setting, the base model assigns very low probability to `'BB'` (0.01%), while the DAPT model makes it the top next predicted token at 77.4%. 
 
-The more general control prompts also show drift. For example, after ` dogs and`, the DAPT model places biomedical-flavored tokens such as `' patients'`, `' cancer'`, `' metast'`, `' tumor'`, and `' breast'` in its top-10 predictions, whereas the base model stays on ordinary pet-related continuations. This indicates that DAPT broadened the model's tendency to surface domain-associated tokens even in weakly related contexts.
-
-### Parameter-difference analysis
+ Importantly, the DAPT model does not simply force biomedical continuations everywhere. In the emergency-room context, the surrounding words still constrain the model away from `ERBB2`. At the same time, the pet-context control shows that DAPT introduces some spillover outside the domain: after ` dogs and`, the DAPT model brings biomedical-flavored tokens such as `' patients'`, `' cancer'`, `' metast'`, `' tumor'`, and `' breast'` into its top predictions (data not shown; see compare_base_vs_dapt.ipynb). Hence, we appear to observe a strong biomedical specialization with some detectable general-context drift.
 
 
+## Parameter-Difference Analysis
+
+Given the clear signs that our training did affect the model, we next examined sites of modification. Parameter-difference analyses help identify candidate sites of adaptation.
 
 The largest individual tensor changes were:
 
@@ -101,16 +73,18 @@ The largest individual tensor changes were:
 | `trf_blocks.0.att.W_value.weight` | 0.1410 |
 | `trf_blocks.9.norm2.shift` | 0.1399 |
 
-For the above table, "Relative L2" is computed as the magnitude of the change divided by the base magnitude from:
-$\text{Relative L2} = \frac{\lVert W_{\text{DAPT}} - W_{\text{base}} \rVert_2}{\lVert W_{\text{base}} \rVert_2 + \varepsilon}$
+Here, relative L2 is defined as:
 
+```math
+\text{Relative L2} = \frac{\lVert W_{\text{DAPT}} - W_{\text{base}} \rVert_2}{\lVert W_{\text{base}} \rVert_2 + \varepsilon}
+```
 
+At the block level, a simple mean-relative-L2 summary was calculated using the following equation:
+$\text{Simple Block Mean Relative L2} = \frac{1}{N}\sum_{i=1}^{N}\frac{\left\lVert W^{(i)}_{\text{DAPT}} - W^{(i)}_{\text{base}} \right\rVert_2}{\left\lVert W^{(i)}_{\text{base}} \right\rVert_2 + \varepsilon}$
 
-To examine changes on a block level, we computed the mean change for all tensors in a block using the equation above for each tensor; this output is in the notebook's `Changed blocks (simple summary)` output. The equation used is: $\text{Simple Block Mean Relative L2} = \frac{1}{N}\sum_{i=1}^{N}\frac{\left\lVert W^{(i)}_{\text{DAPT}} - W^{(i)}_{\text{base}} \right\rVert_2}{\left\lVert W^{(i)}_{\text{base}} \right\rVert_2 + \varepsilon}$
+ Using this approach, the most changed components as:
 
- (The "max relative L2" is simply the value for the relative L2 of the most changed tensor in a block.) The embedding tables are still the most changed components, followed by blocks 0 and 11 and then a fairly broad spread across the rest of the transformer stack:
-
-| Block | Simple Block Mean Relative L2 | Simple Block Max Relative L2 |
+| Block | Simple block mean relative L2 | Simple block max relative L2 |
 | --- | ---: | ---: |
 | `tok_emb` | 0.2483 | 0.2483 |
 | `pos_emb` | 0.0838 | 0.0838 |
@@ -119,7 +93,7 @@ To examine changes on a block level, we computed the mean change for all tensors
 | `trf_blocks.5` | 0.0698 | 0.1277 |
 | `trf_blocks.2` | 0.0671 | 0.1370 |
 
-At the submodule level, the largest changes are concentrated in:
+At the submodule level, the largest changes were concentrated in:
 
 - `tok_emb`
 - `att.W_value`
@@ -127,13 +101,14 @@ At the submodule level, the largest changes are concentrated in:
 - `norm2`
 - `norm1`
 
-This points to a broader redistribution of model behavior across embeddings, normalization terms, and attention pathways rather than a single isolated source of adaptation.
+An alternative aggregated block-level metric used the following equation:
+$\text{Aggregated Block Relative L2} = \frac{\sqrt{\sum_i \lVert W^{(i)}_{\text{DAPT}} - W^{(i)}_{\text{base}} \rVert_2^2}}{\sqrt{\sum_i \lVert W^{(i)}_{\text{base}} \rVert_2^2} + \varepsilon}$
 
-Arguably, taking the mean across the relative L2 values is not the proper way to aggregate the values; instead we could use an alternative measure: $\text{Aggregated Block Relative L2} = \frac{\sqrt{\sum_i \lVert W^{(i)}_{\text{DAPT}} - W^{(i)}_{\text{base}} \rVert_2^2}}{\sqrt{\sum_i \lVert W^{(i)}_{\text{base}} \rVert_2^2} + \varepsilon}$
 
-By this measure, the rankings were somewhat different:
 
-| Block | Aggregated Block Relative L2 |
+Importantly,this weights tensor elements equally rather than tensors equally. It produced a somewhat different ranking:
+
+| Block | Aggregated block relative L2 |
 | --- | ---: |
 | `tok_emb` | 0.2483 |
 | `pos_emb` | 0.0837 |
@@ -151,27 +126,51 @@ By this measure, the rankings were somewhat different:
 | `trf_blocks.0` | 0.0315 |
 | `trf_blocks.1` | 0.0296 |
 
-Note that the max is not listed here, because that would be a value from a single position in a tensor and would not be informative.
+Both metrics point toward a **broad set of moved components**. Token embeddings and positional embeddings are prominent under both views, while layer norms and attention-value pathways also stand out. These analyses are therefore useful for generating transplantation hypotheses, but they should not be treated as causal proof on their own.
 
-Note that token embedding, positional embedding are the top 2, as with the simple block L2, but the next two are quite different. Here, the 3rd and 4th most changed are transformer blocks 5 and 6, while in the simple relative L2, it is blocks 11 and 0.
+## Embedding Comparisons
 
-It is worth considering the differences in these two measures. The "simple" measure weights _each tensor_ equally; the "aggregated" measure weights _each element of all the tensors in a block_ equally. 
+Given that embedding appeared to be a major site of change based on the analyses above, we performed further analysis of changes at this locus. 
 
+We began by calculting cosine similarity for each of the tokens in the tokenizer. For the entire set of 50,257 token embeddings, overall cosine similarity statistics for the population were:
 
+| Metric | Cosine similarity |
+| --- | ---: |
+| Min | 0.8702 |
+| Mean | 0.9684 |
+| Max | 0.9993 |
+
+Hence, the token embeddings clearly changed, but globally they remained fairly similar. The most changed tokens were also not obviously dominated by biomedical tokens. The bottom of the cosine-similarity ranking includes tokens such as `' You'`, `' someone'`, `' putting'`, `' Don'`, `' basically'`, and `' Matt'`. That weakens any claim that DAPT acted primarily by selectively rewriting a small, obvious set of biomedical token vectors.
+
+We next examined whether DAPT was driving the representation of tokens comprising biomedical terms together. For example, " EGFR" is frequently found in our abstracts and decomposes into " EG" and "FR" at the token level. Because these tokens are much more frequently found together in our abstract set vs general text, we might expect their embeddings to coverge.
+A small hand-picked set of token-pair tests showed only modest changes:
+
+| Pair group | Token pair | Base similarity | DAPT similarity | Ratio (DAPT/base) |
+| --- | --- | ---: | ---: | ---: |
+| Biomedical-related | `' ER'` vs `'BB'` | 0.2552 | 0.2638 | 1.0336 |
+| Biomedical-related | `' HER'` vs `'2'` | 0.2598 | 0.2653 | 1.0213 |
+| Biomedical-related | `' kin'` vs `'ase'` | 0.2703 | 0.2714 | 1.0044 |
+| Biomedical-related | `' EG'` vs `'FR'` | 0.2568 | 0.2434 | 0.9481 |
+| Comparator | `'HER'` vs `' 2'` | 0.1710 | 0.1721 | 1.0061 |
+| Comparator | `'EG'` vs `' FR'` | 0.2667 | 0.2304 | 0.8641 |
+| Comparator | `'BB'` vs `'2'` | 0.2752 | 0.2702 | 0.9816 |
+| Comparator | `' cat'` vs `' dog'` | 0.5498 | 0.5287 | 0.9617 |
+
+These embedding results appear to show somewhat variable results, but certainly do not point toward convergence of embeddings as a clear mechanism.
 
 ## Weight Transplantation Experiments
 
-The notebook evaluates several hybrid models:
+The transplantation experiments provide the clearest evidence for the distributed changes hypothesis. We examined the following hybrid models:
 
-- `base_embed_dapt_model`: base model with only DAPT token embeddings.
-- `base_embed_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and a few selected layer-norm shifts. This is based on the tensor analysis above, and positional embeddings because they appear in the block and submodule listings.
-- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 0 and 11. These are the top 4 entries in the "simple" altered block analysis.
-- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, positional embeddings, and full blocks 5 and 6. This acts as a partial control for use of blocks 0 and 11 in the other hybrid, as 5 and 6 are lower on the list of "simple" altered blocks; note that these alterations are the top 4 in the "aggregated" block change analysis.
-- `dapt_embed_base_model`: DAPT model with token embeddings replaced by base embeddings.
+- `base_embed_dapt_model`: base model with transplanted DAPT token embeddings
+- `base_embed_plusothers_dapt_model`: base model with DAPT token embeddings, DAPT positional embeddings, and selected DAPT layer-norm shifts (shifts of norm1 from block 0; shifts of norm2 from blocks 4,9,10,11)
+- `base_embed_pos_trf0_11_model`: base model with DAPT token embeddings, DAPT positional embeddings, and full DAPT transformer blocks 0 and 11
+- `base_embed_pos_trf5_6_model`: base model with DAPT token embeddings, DAPT positional embeddings, and full DAPT transformer blocks 5 and 6
+- `dapt_embed_base_model`: DAPT model with transplanted base token embeddings
 
-Validation losses on the sampled biomedical validation set (2.5% of the entire validation set):
+Validation losses on the 2.5% biomedical validation subset were:
 
-| Model | Subset validation loss |
+| Model | Validation loss (2.5% subset) |
 | --- | ---: |
 | `dapt_model` | 2.5855 |
 | `base_embed_pos_trf0_11_model` | 2.8648 |
@@ -181,52 +180,54 @@ Validation losses on the sampled biomedical validation set (2.5% of the entire v
 | `base_embed_plusothers_dapt_model` | 3.2675 |
 | `base_embed_dapt_model` | 3.3093 |
 
-These hybrids support four conclusions:
+The 2.5% validation subset appears reasonable in that loss with the 2.5% validation set is very similar to the full validation set for both the base (2.9581 for 2.5% vs 2.9233 for full) and dapt models (2.5855 for 2.5% vs 2.5513 for full) and of the same direction (greater in the 2.5% set) and magnitude (~0.03 in both; relative change of ~1%).
 
-1. To begin, DAPT did lead to a decrease in the subset validation loss, as expected and seen in prompt completions above. 
-2. DAPT embeddings appear necessary, but not sufficient, for the loss improvement. The (DAPT + base embeddings) model shows almost total loss of the DAPT advantage while (base + DAPT embeddings) makes validation loss worse than the original base model and much worse than the DAPT model.
-3. All the base model hybrids had worse loss than the base model, except for the (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block), which showed a modest improvement over the base model. This supports the idea that coordinated changes are necessary for the DAPT advantage.
-4. The block analysis still points toward some blocks being more important than others for the DAPT loss advantage. The (base + DAPT embeddings + DAPT positional encoding + DAPT first block + DAPT last block) model is much better than (base + DAPT embeddings + DAPT positional encoding + DAPT block 5 + DAPT block 6), which is consistent with the first and last transformer blocks playing a key role in accommodating the altered DAPT embedding. 
-5. This also points toward the "simple" block change analysis being potentially superior to the "aggregated" block change analysis.
+These results support the distributed changes model. DAPT token embeddings appear to be **important but not sufficient**. Replacing the DAPT embeddings with the base embeddings (`dapt_embed_base_model`) substantially removes the DAPT advantage. But the reverse operation is even more informative: transplanting only the DAPT embeddings into the base model (`base_embed_dapt_model`) makes performance worse than the original base model. This result argues strongly against an embedding-only explanation.
 
-To examine this further, we tested the biomedical prompt ending in ' ER' that should lead to 'BB' as the next token, just as in the above table of prompt completion percentages. This was tested in a subset of models:
+Furthermore, the best hybrid model is not the embedding-only hybrid but `base_embed_pos_trf0_11_model`, which combines DAPT embeddings and positional embeddings with selected full DAPT blocks. This suggests that the DAPT gain depends on coordinated changes across multiple parts of the network.
 
+Finally, the contrast between `base_embed_pos_trf0_11_model` and `base_embed_pos_trf5_6_model` suggests that some block locations may matter more than others for partial recovery of the DAPT gain. However, that result should be interpreted cautiously: it nominates candidate important blocks rather than proving that blocks 0 and 11 are uniquely causal.
 
-| Model | P(`'BB'` in biomedical `' ER'` context) |
+To connect the loss results back to behavior, the report also examined the biomedical prompt context ending in `' ER'`, where the next token should be `'BB'` in an `ERBB2`-style continuation:
+
+| Model | P(`'BB'` in biomedical ` ' ER'` context) |
 | --- | ---: |
 | `base_model` | 0.000555 |
 | `base_embed_plusothers_dapt_model` | 0.000844 |
 | `dapt_embed_base_model` | 0.371979 |
 | `dapt_model` | 0.774406 |
 
-These results broadly support the conclusions from the loss values above; the dapt_model becomes significantly worse with usage of the base_model encoding and the base model becomes slightly better with usage of some dapt_model tensors.
+This table reinforces the main loss-based conclusion. The full DAPT model strongly favors the biomedical continuation. Replacing its embeddings with the base embeddings weakens that behavior, but only partially back to the base model level. That pattern is consistent with embeddings mattering substantially while still being only part of the story.
+
 
 ## Interpretation
 
-The notebook's strongest supported conclusion is that DAPT altered the model in a distributed way. The embedding matrix changed substantially in parameter space, but embedding-space similarity checks by themselves understate the behavioral shift. Large functional effects appear in context-conditioned predictions, especially in biomedical completions, and these effects survive partial removal of the DAPT embedding changes.
+The strongest supported conclusion from the notebook is that biomedical DAPT changed the model in a **distributed, coordinated way**.
 
-A reasonable interpretation is:
+Three takeaways can be ranked by confidence.
 
-- DAPT moved the model toward biomedical continuations through coordinated changes across embeddings, attention value pathways, layer norms, and multiple transformer blocks.
-- The token embedding matrix is an important site of change, but it must work with other changes to be effective.
-- The first and last transformer blocks appear to be important sites of change, with middle blocks being potentially less important.
+**Highest confidence:** the DAPT improvement is not explained by token-embedding swaps alone. The embedding-only transplant fails badly, while removing DAPT embeddings from the DAPT model also sharply weakens performance.
 
- 
+**Moderate confidence:** the DAPT gain depends on coordinated changes across multiple components, including embeddings and at least some additional transformer machinery. The best hybrid model partially recovers the DAPT advantage only when embeddings are combined with other transplanted DAPT components.
+
+**Lower confidence but plausible:** some block locations may matter more than others for partial recovery. The block-0-and-11 hybrid performed much better than the block-5-and-6 hybrid, but the current experiments are too selective to treat that as a final mechanistic localization.
+
+Overall, the report supports a view in which DAPT on this biomedical corpus did not simply rewrite a few domain token vectors. Instead, it altered how multiple model components work together to produce biomedical continuations.
+
 ## Limitations
 
-- The weight-transplantation study is selective rather than exhaustive, so it identifies useful clues, not a complete causal decomposition.
-- Prompt-based evaluation is qualitative and uses a small hand-written prompt set.
-- The validation analysis uses only `2.5%` of one domain-specific validation file, so the loss ranking should be treated as directional rather than definitive.
-- Each model was fully deterministic, using the best next token prediction. Furthermore, the models did not start from random weights, but rather with the OpenAI supplied weights. Hence, run to run variance should be very small in magnitude.
+This report has several important limitations.
 
+- The weight-transplantation study is selective rather than exhaustive, so it provides useful clues rather than a full causal decomposition.
+- The prompt-based evaluation is qualitative and relies on a small hand-written prompt set.
+- Out-of-domain evaluation is limited. Aside from a few control prompts, this report does not quantify how much general-language capability was preserved or degraded after DAPT.
+- The parameter-difference analyses identify where weights moved, but not which of those movements are strictly necessary for the behavioral change.
 
 ## Appendix A: Extended Tables
 
-Note that much more detailed and lengthy outputs are available in the compare_base_vs_dapt.ipynb notebook.
+Much more detailed output remains available in `compare_base_vs_dapt.ipynb`. The tables below are retained mainly as supporting reference material.
 
 ### A1. Top 10 most changed tokens by base-vs-DAPT embedding cosine
-
-Lowest cosine similarlity tokens from the notebook:
 
 | Rank | Token | Cosine similarity |
 | --- | --- | ---: |
@@ -242,8 +243,6 @@ Lowest cosine similarlity tokens from the notebook:
 | 10 | `' your'` | 0.887860 |
 
 ### A2. Top 10 least changed tokens by base-vs-DAPT embedding cosine
-
-Highest cosine similarity tokens from the notebook:
 
 | Rank | Token | Cosine similarity |
 | --- | --- | ---: |
@@ -294,9 +293,3 @@ Highest cosine similarity tokens from the notebook:
 | `att.W_key` | 0.052851 | 0.092317 |
 | `final_norm` | 0.043623 | 0.049168 |
 
-## Appendix B: Additional Notes
-
-- The notebook's embedding analyses and prompt analyses should not be read as equivalent evidence. The prompt analyses are much more informative about actual model behavior.
-- Because GPT-2 ties the token embedding and output head weights, token-embedding changes also directly affect the output distribution, but the transplantation experiments show that this direct effect is still not enough to explain the full DAPT improvement.
-- The best-performing hybrid in the notebook is `base_embed_pos_trf0_11_model`, which suggests that some targeted block swaps can recover part of the domain gain, but the result is very from the full dapt_model loss.
-- The poor performance of `base_embed_dapt_model` is a useful negative result: a transplanted embedding table can be mismatched to the rest of the base network.

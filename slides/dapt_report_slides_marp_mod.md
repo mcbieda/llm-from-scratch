@@ -39,7 +39,7 @@ Date: 2026-04-18
 	- therefore, expect minimal data leakage and should see clear training signal
 	
 	
-- Goal: not just “does it help?”, but **where the gain lives**
+- Goals: 1) show DAPT effectiveness with limited DAPT and 2) **where the gain lives**
 - Key tools:
   - validation loss
   - prompt probes
@@ -52,12 +52,12 @@ Date: 2026-04-18
 
 - DAPT was successful
 	- loss on biomedical validation set decreased
-	- limited prompt examination showed shift toward appropriate biomedical next token predictions
+	- shift toward appropriate biomedical next token predictions
 	
 - Biomedical DAPT produces a **distributed, coordinated change**.
 	- DAPT produced changes across a range of blocks/layers in the model
 	- Token embeddings matter, but **are not sufficient**
-	- Embedding-only swaps fail (and can hurt)
+	- Embedding swap into base model does not produce DAPT model
 	- Partial recovery requires embeddings **plus** other DAPT components / blocks
 
 ---
@@ -75,7 +75,7 @@ Evaluation:
 - Separate validation corpus: 671,020 tokens (≈ 2.90M characters)
 - Some hybrid comparisons use a 2.5% subset for speed
 
-- Training details (high level)
+- Limited DAPT regimen details (high level)
 	- 1 epoch
 	- batch size: 2
 	- stride: 1024
@@ -84,7 +84,7 @@ Evaluation:
 # DAPT SHIFTS MODEL BEHAVIOR
 ---
 
-## Validation loss after DAPT (headline)
+## Validation loss after DAPT 
 Full validation set:
 - Loss: **2.9233 → 2.5513**
 - Drop: **0.372 nats** (≈ **12.7%** relative)
@@ -92,15 +92,13 @@ Full validation set:
 
 ---
 
-## Prompt probes (headline)
+## Prompt Probes Show Shift Toward Biomedical Completions
 DAPT shifts next-token behavior strongly **in biomedical contexts**:
 - `ER` in cancer context → strongly prefers biomedical continuation (`ERBB2`)
 - Still respects context (ER = emergency room prompt does not collapse to ERBB2)
 - Some spillover drift on general prompts (pet context)
 
----
 
-## Prompt-Based Behavioral Changes
 
 | Prompt / context | Expected token / continuation | Base model | DAPT model | Interpretation |
 | --- | --- | ---: | ---: | --- |
@@ -109,6 +107,8 @@ DAPT shifts next-token behavior strongly **in biomedical contexts**:
 | Emergency-room context ending with `ER` | Several possible continuations | top: `.` (31.7%) | top: `' and'` (14.5%) | DAPT changes the ranking, but context still prevents a collapse onto `ERBB2`. |
 | Ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 67.7% | General-language behavior remains recognizable, but there is noticeable biomedical drift. |
 
+---
+# LOCALIZATION OF CHANGES
 ---
 
 ## Parameter Differences (by tensor) 
@@ -178,6 +178,8 @@ $\text{Aggregated Block Relative L2} =
 Note: this weights _tensor elements_ equally rather than weighting _tensors_ equally.
 
 ---
+# ANALYSIS OF EMBEDDING CHANGES
+---
 
 ## Examination of embedding changes
 
@@ -209,6 +211,8 @@ _Do embeddings that are from closely associated tokens in the training set come 
 
 'Similarity' is cosine similarity
 
+---
+# WEIGHT TRANSPLANTATION SUPPORTS DISTRIBUTED CHANGES
 ---
 
 ## Weight Transplantation Experiments (Validation Loss)
