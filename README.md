@@ -4,7 +4,7 @@ A modular GPT-2-small experimentation repository based on Sebastian Raschka's *B
 
 ## Slides
 
-Presentation slides for the DAPT analysis are available at `docs/index.html`.
+Presentation slides for the DAPT analysis are available at `https://mcbieda.github.io/llm-from-scratch/`.
 
 ## What this demonstrates
 
