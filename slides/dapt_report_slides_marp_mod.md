@@ -28,7 +28,9 @@ code { font-size: 0.9em; }
 # Where Does Biomedical DAPT Change GPT-2 Small?
 ## Evidence from Weight Differences, Prompt Probes, and Transplant Experiments
 
-**Slide deck (Marp) generated from report**  
+_Slide deck (Marp) generated from report_ 
+
+Mark Bieda 
 Date: 2026-04-18
 
 ---
