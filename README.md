@@ -2,6 +2,10 @@
 
 A modular GPT-2-small experimentation repository based on Sebastian Raschka's *Build a Large Language Model (From Scratch)*, extended with biomedical domain-adaptive pretraining (DAPT), model comparison notebooks, and utilities for PubMed abstract collection.
 
+## Slides
+
+Presentation slides for the DAPT analysis are available at `docs/index.html`.
+
 ## What this demonstrates
 
 - Transformer architecture implementation and training workflow in PyTorch
