@@ -25,8 +25,6 @@ section.tiny table { font-size: 13px; }
 code { font-size: 0.9em; }
 </style>
 
----
-
 # Where Does Biomedical DAPT Change GPT-2 Small?
 ## Evidence from Weight Differences, Prompt Probes, and Transplant Experiments
 
@@ -196,7 +194,7 @@ _Across the full set of tokens, what is the min, mean, and max changes per token
 
 ## Embedding Comparisons
 
-_Do embeddings that are from closely associated tokens in the training set come together?_
+_Do embeddings from closely associated tokens in the training set come together?_
 
 | Pair group | Token pair | Base similarity | DAPT similarity | Ratio (DAPT/base) |
 | --- | --- | ---: | ---: | ---: |
@@ -245,7 +243,7 @@ Logic:
 
 ## Weight Transplantation Experiments (Prompt Behavior)
 
-| Model | P(`'BB'` \| biomedical ` ' ER'` context) |
+| Model | P(`'BB'` \|  biomedical `' ER'` context) |
 | --- | ---: |
 | `base_model` | 0.000555 |
 | `base_embed_plusothers_dapt_model` | 0.000844 |
