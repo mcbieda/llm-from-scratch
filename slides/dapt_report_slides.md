@@ -40,9 +40,11 @@ Date: 2026-04-18
 
 - Why GPT-2 small (124M)?
 	- small enough to provide efficient platform for limited scale project
-	- base model trained on data from 2019 and before
-	- Pubmed abstracts do not appear to be part of training set
-	- therefore, expect minimal data leakage and should see clear training signal
+	- expect minimal data leakage and should see clear training signal
+		- Pubmed abstracts do not appear to be part of training set
+		- base model trained on data from 2019 and before
+	
+	
 	
 	
 - Goals: 1) show DAPT effectiveness with limited DAPT and 2) **where the gain lives**
@@ -79,7 +81,7 @@ DAPT data:
 
 Evaluation:
 - Separate validation corpus: 671,020 tokens (≈ 2.90M characters)
-- Some hybrid comparisons use a 2.5% subset for speed
+- Some hybrid comparisons use a 2.5% subset of validation corpus for speed
 
 - Limited DAPT regimen details (high level)
 	- 1 epoch
@@ -108,7 +110,7 @@ DAPT shifts next-token behavior strongly **in biomedical contexts**:
 
 | Prompt / context | Expected token / continuation | Base model | DAPT model | Interpretation |
 | --- | --- | ---: | ---: | --- |
-| Cancer context ending with `HER` | `'2'` | 55.1% | 98.8% | DAPT strongly sharpens a biomedical completion that the base model already partially favors. |
+| Cancer context ending with `HER` | `'2'` | 55.1% | 98.8% | DAPT strongly enhances a biomedical completion that the base model already partially favors. |
 | Cancer context ending with `ER` and designed to continue toward `ERBB2` | `'BB'` | 0.1% | 77.4% | DAPT strongly shifts the continuation toward biomedical terminology. |
 | Emergency-room context ending with `ER` | Several possible continuations | top: `.` (31.7%) | top: `' and'` (14.5%) | DAPT changes the ranking, but context still prevents a collapse onto `ERBB2`. |
 | Ordinary pet-context prompt ending in `dogs and` | `' cats'` | 94.0% | 67.7% | General-language behavior remains recognizable, but there is noticeable biomedical drift. |
@@ -213,7 +215,7 @@ _Do embeddings from closely associated tokens in the training set come together?
 'Similarity' is cosine similarity
 
 ---
-# WEIGHT TRANSPLANTATION SUPPORTS DISTRIBUTED CHANGES
+# WEIGHT TRANSPLANTATION SUPPORTS DISTRIBUTED CHANGES HYPOTHESIS
 ---
 
 ## Weight Transplantation Experiments (Validation Loss)
@@ -241,16 +243,36 @@ Logic:
 | `base_embed_plusothers_dapt_model` | 3.2675 |
 | `base_embed_dapt_model` | 3.3093 |
 
+A number of altered base models become _worse than base model_ with transplantation of dapt model components; but transplantation of the embedding + positional weights + first and last transformer blocks into base model leads to some improvement.
+
 ---
 
 ## Weight Transplantation Experiments (Prompt Behavior)
 
+A biomedical prompt ending in `ER` is supplied and the correct next token is `BB` (to form `ERBB2`)
+
 | Model | P(`'BB'` \|  biomedical `' ER'` context) |
 | --- | ---: |
-| `base_model` | 0.000555 |
-| `base_embed_plusothers_dapt_model` | 0.000844 |
-| `dapt_embed_base_model` | 0.371979 |
-| `dapt_model` | 0.774406 |
+| `base_model` | <1% (0.000555) |
+| `base_embed_plusothers_dapt_model` | <1% (0.000844) |
+| `dapt_embed_base_model` | 37.2% (0.371979) |
+| `dapt_model` | 77.4% (0.774406) |
+
+_Massive increase in probability of `BB` for DAPT model, and this increase is greatly reduced by transplanting base model embedding layer into the dapt model_
+
+---
+
+## SUMMARY
+
+- Limited biomedical DAPT created expected changes in model behavior, without collapse of normal behavior
+- Loci of changes
+	- Token embeddings appear important but not sufficient*
+	- Clear indications of distributed and coordinated changes involving several layers
+- **Potential Future Directions**
+	- more transplantation experiments
+	
+_*Note that because of weight-tying, token embeddings affected the embedding layer and the output layer_
+	
 
 ---
 
