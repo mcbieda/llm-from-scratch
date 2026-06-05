@@ -31,7 +31,7 @@ code { font-size: 0.9em; }
 _Slide deck (Marp) generated from report_ 
 
 Mark Bieda 
-Date: 2026-04-18
+Date: 2026-04-18; update 2026-06-04
 
 ---
 
@@ -181,18 +181,24 @@ $\text{Aggregated Block Relative L2} =
 Note: this weights _tensor elements_ equally rather than weighting _tensors_ equally.
 
 ---
+
 # ANALYSIS OF EMBEDDING CHANGES
+
+_Token embedding consistently emerged above as a highly altered component. Also, due to weight-tying, token embeddings affected the embedding layer and the output layer, allowing large effects._
+
 ---
 
 ## Examination of embedding changes
 
 _Across the full set of tokens, what is the min, mean, and max changes per token embedding?_
 
-| Metric | Cosine similarity (base vs DAPT models) |
+| Metric | Cosine similarity (base vs DAPT) |
 | --- | ---: |
 | Min | 0.8702 |
 | Mean | 0.9684 |
 | Max | 0.9993 |
+
+These results are consistent with potentially important changes at the token embedding level.
 
 ---
 
@@ -262,14 +268,21 @@ _Massive increase in probability of `BB` for DAPT model, and this increase is gr
 
 ---
 
-## SUMMARY
+## CONCLUSIONS
 
+- Limited scope project with initial experiments and results shown here
 - Limited biomedical DAPT created expected changes in model behavior, without collapse of normal behavior
 - Loci of changes
 	- Token embeddings appear important but not sufficient*
 	- Clear indications of distributed and coordinated changes involving several layers
 - **Potential Future Directions**
-	- more transplantation experiments
+	- better evidence for distributed changes: do more transplantation experiments
+	- better examination of DAPT effects on "normal text" model behavior: development and use of a normal text validation set
+	- much deeper examination of layer representations of the DAPT changes; interpretability of these alterations
+	- training from scratch with mixture of domain-specific data and generic text data
+	- direct testing of whether training can be restricted to certain components only ("locking" other layers/components) to see if successful DAPT can be established this way
+	
+	
 	
 _*Note that because of weight-tying, token embeddings affected the embedding layer and the output layer_
 	
